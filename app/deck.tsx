@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -15,6 +16,11 @@ const DualWebSocketList: React.FC = () => {
   const [messages, setMessages] = useState<MessageData[]>([]);
 
   const messageIdCounter = useRef<number>(0);
+  const deleteMessage = (messageId: number) => {
+    setMessages((prevMessages) =>
+      prevMessages.filter((message) => message.id !== messageId),
+    );
+  };
 
   useEffect(() => {
     // 替换为你的真实 WebSocket 地址
@@ -66,13 +72,22 @@ const DualWebSocketList: React.FC = () => {
       {messages.length === 0 ? (
         <p>Waiting for message...</p>
       ) : (
-        messages.map((msg) => <MessageItem key={msg.id} data={msg} />)
+        messages.map((msg) => (
+          <MessageItem
+            key={msg.id}
+            data={msg}
+            onDelete={() => deleteMessage(msg.id)}
+          />
+        ))
       )}
     </div>
   );
 };
 
-const MessageItem: React.FC<{ data: MessageData }> = ({ data }) => {
+const MessageItem: React.FC<{
+  data: MessageData;
+  onDelete: () => void;
+}> = ({ data, onDelete }) => {
   const [showTranslation, setShowTranslation] = useState<boolean>(false);
 
   return (
@@ -80,13 +95,15 @@ const MessageItem: React.FC<{ data: MessageData }> = ({ data }) => {
       className="border border-zinc-800 bg-zinc-900/50 p-4 backdrop-blur-md"
       style={styles.card}
     >
-      <div
-        style={{
-          color: "#666",
-          fontSize: "0.8rem",
-        }}
-      >
-        {data.timestamp}
+      <div style={styles.cardHeader}>
+        <div
+          style={{
+            color: "#666",
+            fontSize: "0.8rem",
+          }}
+        >
+          {data.timestamp}
+        </div>
       </div>
 
       <div
@@ -99,13 +116,24 @@ const MessageItem: React.FC<{ data: MessageData }> = ({ data }) => {
       >
         <div style={styles.originalText}>{data.original}</div>
 
-        <Button
-          variant="outline"
-          // style={styles.button}
-          onClick={() => setShowTranslation((prev) => !prev)}
-        >
-          {showTranslation ? "Hide" : "Trans"}
-        </Button>
+        <div style={styles.actions}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTranslation((prev) => !prev)}
+          >
+            {showTranslation ? "Hide" : "Trans"}
+          </Button>
+
+          <Button
+            variant="destructive"
+            size="icon-sm"
+            onClick={onDelete}
+            aria-label="Delete message"
+          >
+            <Trash2 />
+          </Button>
+        </div>
       </div>
 
       {showTranslation && (
@@ -123,6 +151,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "sans-serif",
   },
   card: {},
+  cardHeader: {
+    marginBottom: "10px",
+  },
+  actions: {
+    display: "flex",
+    gap: "8px",
+    alignItems: "center",
+  },
   originalText: {
     fontSize: "18px",
     fontWeight: "bold",
@@ -134,15 +170,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderTop: "1px solid #666",
     fontSize: "16px",
     color: "#666",
-  },
-  button: {
-    padding: "6px 12px",
-    fontSize: "14px",
-    cursor: "pointer",
-    backgroundColor: "#007bff",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
   },
 };
 
