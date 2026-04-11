@@ -14,25 +14,35 @@ export interface MessageData {
 const DualWebSocketList: React.FC = () => {
   const [messages, setMessages] = useState<MessageData[]>([]);
 
-  // 使用 useRef 维护消息队列，避免触发不必要的重新渲染
-  const originalQueue = useRef<string[]>([]);
-  const translationQueue = useRef<string[]>([]);
   const messageIdCounter = useRef<number>(0);
 
-  // 同步队列的方法：只要两个队列中都有数据，就将它们成对提取出来
-  const processQueues = () => {
-    // 只有当原文和译文都至少有一条时才进行组合
-    if (
-      originalQueue.current.length > 0 &&
-      translationQueue.current.length > 0
-      //  || (originalQueue.current.length > 0 && translationQueue.current.length == 0)
-    ) {
-      const original = originalQueue.current.shift()!;
-      const translation = translationQueue.current.shift()!;
+  useEffect(() => {
+    // 替换为你的真实 WebSocket 地址
+    const wsOriginal = new WebSocket("ws://localhost:2333/api/ws/text/origin");
+
+    wsOriginal.onmessage = async (event: MessageEvent<string>) => {
+      const originalText = event.data;
+
+      let translation = "";
+
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:2333/api/translate?text=${encodeURIComponent(originalText)}`,
+        );
+
+        if (!response.ok) {
+          throw new Error(`Translation request failed: ${response.status}`);
+        }
+
+        const { result } = (await response.json()) as { result?: string };
+        translation = result ?? "";
+      } catch (error) {
+        console.error("Translation fetch failed:", error);
+      }
 
       const newMessage: MessageData = {
         id: messageIdCounter.current++,
-        original,
+        original: originalText,
         translation,
         timestamp: new Date().toLocaleString("en-GB", {
           timeZone: "Asia/Shanghai",
@@ -41,35 +51,13 @@ const DualWebSocketList: React.FC = () => {
 
       // 更新状态，将新消息追加到列表中
       setMessages((prevMessages) => [...prevMessages, newMessage]);
-    }
-  };
-
-  useEffect(() => {
-    // 替换为你的真实 WebSocket 地址
-    const wsOriginal = new WebSocket("ws://localhost:2333/api/ws/text/origin");
-    const wsTranslation = new WebSocket(
-      "ws://localhost:2333/api/ws/text/trans",
-    );
-
-    wsOriginal.onmessage = (event: MessageEvent) => {
-      originalQueue.current.push(event.data);
-      processQueues();
     };
 
-    wsTranslation.onmessage = (event: MessageEvent) => {
-      translationQueue.current.push(event.data);
-      processQueues();
-    };
-
-    // 错误处理（可选）
     wsOriginal.onerror = (error) => console.error("Original WS Error:", error);
-    wsTranslation.onerror = (error) =>
-      console.error("Translation WS Error:", error);
 
     // 组件卸载时关闭连接，防止内存泄漏
     return () => {
       wsOriginal.close();
-      wsTranslation.close();
     };
   }, []);
 
@@ -144,7 +132,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: "12px",
     paddingTop: "12px",
     borderTop: "1px solid #666",
-    fontSize: "15px",
+    fontSize: "16px",
     color: "#666",
   },
   button: {
