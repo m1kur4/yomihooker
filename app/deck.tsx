@@ -4,66 +4,123 @@ import React, { useState, useEffect, useRef } from "react";
 import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
-export interface MessageData {
-  id: number;
-  original: string;
-  translation: string;
-  timestamp: string;
-}
+import type { MessageData } from "@/lib/message-data";
 
 const DualWebSocketList: React.FC = () => {
   const [messages, setMessages] = useState<MessageData[]>([]);
 
   const messageIdCounter = useRef<number>(0);
-  const deleteMessage = (messageId: number) => {
+  const deleteMessage = async (messageId: number) => {
+    const response = await fetch(`/api/messages/${messageId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      console.error("Delete request failed:", response.status);
+      return;
+    }
+
     setMessages((prevMessages) =>
       prevMessages.filter((message) => message.id !== messageId),
     );
   };
 
   useEffect(() => {
-    // 替换为你的真实 WebSocket 地址
-    const wsOriginal = new WebSocket("ws://localhost:2333/api/ws/text/origin");
+    let wsOriginal: WebSocket | null = null;
+    let isCancelled = false;
 
-    wsOriginal.onmessage = async (event: MessageEvent<string>) => {
-      const originalText = event.data;
-
-      let translation = "";
-
+    const syncMessages = async () => {
       try {
-        const response = await fetch(
-          `http://127.0.0.1:2333/api/translate?text=${encodeURIComponent(originalText)}`,
-        );
+        const response = await fetch("/api/messages");
 
         if (!response.ok) {
-          throw new Error(`Translation request failed: ${response.status}`);
+          throw new Error(`Messages request failed: ${response.status}`);
         }
 
-        const { result } = (await response.json()) as { result?: string };
-        translation = result ?? "";
+        const persistedMessages = (await response.json()) as MessageData[];
+
+        if (isCancelled) {
+          return;
+        }
+
+        setMessages(persistedMessages);
+        messageIdCounter.current =
+          persistedMessages.reduce(
+            (maxId, message) => Math.max(maxId, message.id),
+            -1,
+          ) + 1;
       } catch (error) {
-        console.error("Translation fetch failed:", error);
+        console.error("Messages fetch failed:", error);
       }
 
-      const newMessage: MessageData = {
-        id: messageIdCounter.current++,
-        original: originalText,
-        translation,
-        timestamp: new Date().toLocaleString("en-GB", {
-          timeZone: "Asia/Shanghai",
-        }),
+      if (isCancelled) {
+        return;
+      }
+
+      wsOriginal = new WebSocket("ws://localhost:2333/api/ws/text/origin");
+
+      wsOriginal.onmessage = async (event: MessageEvent<string>) => {
+        const originalText = event.data;
+
+        let translation = "";
+
+        try {
+          const response = await fetch(
+            `http://127.0.0.1:2333/api/translate?text=${encodeURIComponent(originalText)}`,
+          );
+
+          if (!response.ok) {
+            throw new Error(`Translation request failed: ${response.status}`);
+          }
+
+          const { result } = (await response.json()) as { result?: string };
+          translation = result ?? "";
+        } catch (error) {
+          console.error("Translation fetch failed:", error);
+        }
+
+        const newMessage: MessageData = {
+          id: messageIdCounter.current++,
+          original: originalText,
+          translation,
+          timestamp: new Date().toLocaleString("en-GB", {
+            timeZone: "Asia/Shanghai",
+          }),
+        };
+
+        try {
+          const response = await fetch("/api/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(newMessage),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Persist request failed: ${response.status}`);
+          }
+        } catch (error) {
+          console.error("Message persistence failed:", error);
+          return;
+        }
+
+        if (isCancelled) {
+          return;
+        }
+
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
       };
 
-      // 更新状态，将新消息追加到列表中
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      wsOriginal.onerror = (error) =>
+        console.error("Original WS Error:", error);
     };
 
-    wsOriginal.onerror = (error) => console.error("Original WS Error:", error);
+    void syncMessages();
 
-    // 组件卸载时关闭连接，防止内存泄漏
     return () => {
-      wsOriginal.close();
+      isCancelled = true;
+      wsOriginal?.close();
     };
   }, []);
 
