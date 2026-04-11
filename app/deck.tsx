@@ -149,7 +149,7 @@ const MessageItem: React.FC<{
 
   return (
     <div
-      className="border border-zinc-800 bg-zinc-900/50 p-4 backdrop-blur-md"
+      className="mb-5 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 backdrop-blur-md"
       style={styles.card}
     >
       <div style={styles.cardHeader}>
