@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Trash2 } from "lucide-react";
 
+import { Clipboard } from "@/components/clipboard";
 import { Button } from "@/components/ui/button";
 import type { MessageData } from "@/lib/message-data";
 
@@ -161,6 +162,7 @@ const MessageItem: React.FC<{
         >
           {data.timestamp}
         </div>
+        <Clipboard text={data.original} label="Copy original text" />
       </div>
 
       <div
@@ -210,6 +212,10 @@ const styles: Record<string, React.CSSProperties> = {
   card: {},
   cardHeader: {
     marginBottom: "10px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "12px",
   },
   actions: {
     display: "flex",
