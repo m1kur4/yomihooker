@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Trash2 } from "lucide-react";
 
+import { AudioPlayer } from "@/components/audio-player";
 import { Clipboard } from "@/components/clipboard";
 import { Button } from "@/components/ui/button";
 import type { MessageData } from "@/lib/message-data";
@@ -176,6 +177,8 @@ const MessageItem: React.FC<{
         <div style={styles.originalText}>{data.original}</div>
 
         <div style={styles.actions}>
+          <AudioPlayer text={data.original} compact />
+
           <Button
             variant="outline"
             size="sm"
