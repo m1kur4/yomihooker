@@ -31,14 +31,27 @@ export function ScreenshotButton() {
       canvas.height = Math.round(height * scale);
       canvas.getContext("2d")!.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+      const windowName = track.label
+        .replace(/[\\/:*?"<>|]+/g, "")
+        .trim()
+        .replace(/\s+/g, "_");
+
       stream.getTracks().forEach((t) => t.stop());
 
       canvas.toBlob(async (blob) => {
         if (!blob) return;
-        const ts = new Date()
-          .toLocaleString("en-GB", { timeZone: "Asia/Shanghai" })
-          .replace(/[/:, ]+/g, "_");
-        const filename = `screenshot_${ts}.jpg`;
+        const raw = new Date().toLocaleString("en-GB", {
+          timeZone: "Asia/Shanghai",
+        });
+        // "13/04/2026, 17:24:32" -> "2026_0413_172432"
+        const m = raw.match(
+          /^(\d{2})\/(\d{2})\/(\d{4}),\s*(\d{2}):(\d{2}):(\d{2})$/,
+        );
+        const ts = m
+          ? `${m[3]}_${m[2]}${m[1]}_${m[4]}${m[5]}${m[6]}`
+          : raw.replace(/[/:, ]+/g, "_");
+        const prefix = windowName || "screenshot";
+        const filename = `${prefix}_${ts}.jpg`;
         const form = new FormData();
         form.append("file", blob, filename);
         form.append("name", filename);
