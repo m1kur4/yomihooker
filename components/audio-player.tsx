@@ -164,15 +164,23 @@ export function AudioPlayer({
     return `${yyyy}_${mm}${dd}_${hh}${min}${ss}`;
   };
 
+  const saveToDesktop = async (blob: Blob, name: string) => {
+    const form = new FormData();
+    form.append("file", blob, name);
+    form.append("name", name);
+    const res = await fetch("/api/save-file", { method: "POST", body: form });
+    if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+  };
+
   const handleDownload = async () => {
     if (isDownloading) return;
 
-    // If audio already fetched, download directly
+    const wavName = `${formatFilename(filename)}.wav`;
+
+    // If audio already fetched, save directly
     if (objectUrlRef.current) {
-      const a = document.createElement("a");
-      a.href = objectUrlRef.current;
-      a.download = `${formatFilename(filename)}.wav`;
-      a.click();
+      const blob = await fetch(objectUrlRef.current).then((r) => r.blob());
+      await saveToDesktop(blob, wavName);
       return;
     }
 
@@ -197,10 +205,7 @@ export function AudioPlayer({
       objectUrlRef.current = audioUrl;
       lastTextRef.current = trimmedText;
 
-      const a = document.createElement("a");
-      a.href = audioUrl;
-      a.download = `${formatFilename(filename)}.wav`;
-      a.click();
+      await saveToDesktop(audioBlob, wavName);
     } catch (err) {
       console.error("Download failed:", err);
     } finally {

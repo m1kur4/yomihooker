@@ -1,5 +1,6 @@
 import DualWebSocketList from "./deck";
 import { AudioPlayer } from "@/components/audio-player";
+import { ScreenshotButton } from "@/components/screenshot-button";
 
 const TITLE = "witch on the holy night";
 
@@ -18,8 +19,9 @@ export default function Home() {
         <DualWebSocketList />
       </div>
 
-      <div className="mt-auto flex justify-center pt-8">
+      <div className="mt-auto flex items-center justify-center gap-4 pt-8">
         <AudioPlayer />
+        <ScreenshotButton />
       </div>
     </main>
   );

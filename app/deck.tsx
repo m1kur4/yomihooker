@@ -199,7 +199,10 @@ const MessageItem: React.FC<{
       </div>
 
       {showTranslation && (
-        <div style={styles.translationText}>{data.translation}</div>
+        <div style={{ ...styles.translationText, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+          <span>{data.translation}</span>
+          <Clipboard text={data.translation} label="Copy translation" />
+        </div>
       )}
     </div>
   );
