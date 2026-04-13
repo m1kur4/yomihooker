@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Trash2 } from "lucide-react";
+import { Languages, Trash2 } from "lucide-react";
 
 import { AudioPlayer } from "@/components/audioplayer";
 import { Clipboard } from "@/components/clipboard";
@@ -129,7 +129,7 @@ const TextDeck: React.FC = () => {
   return (
     <div style={styles.container}>
       {messages.length === 0 ? (
-        <p>Waiting for message...</p>
+        <p>Waiting for text...</p>
       ) : (
         messages.map((msg) => (
           <MessageCard
@@ -174,18 +174,21 @@ const MessageCard: React.FC<{
           alignItems: "center",
         }}
       >
-        <div style={styles.originalText}>{data.original}</div>
+        <div style={styles.originalText}>
+          {data.original.trimStart()}
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={() => setShowTranslation((prev) => !prev)}
+            aria-label={showTranslation ? "Hide translation" : "Show translation"}
+            style={{ display: "inline-flex", marginLeft: "8px", verticalAlign: "middle", opacity: showTranslation ? 1 : 0.5 }}
+          >
+            <Languages />
+          </Button>
+        </div>
 
         <div style={styles.actions}>
           <AudioPlayer text={data.original} compact filename={data.timestamp} />
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTranslation((prev) => !prev)}
-          >
-            {showTranslation ? "Hide" : "Trans"}
-          </Button>
 
           <Button
             variant="destructive"

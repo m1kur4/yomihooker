@@ -2,7 +2,7 @@ import TextDeck from "./deck";
 import { AudioPlayer } from "@/components/audioplayer";
 import { Screenshot } from "@/components/screenshot";
 
-const TITLE = "witch on the holy night";
+const TITLE = "TextHooker";
 
 export default function Home() {
   return (
