@@ -5,7 +5,7 @@ import { Camera, LoaderCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-export function ScreenshotButton() {
+export function Screenshot() {
   const [isCapturing, setIsCapturing] = useState(false);
 
   const handleScreenshot = async () => {

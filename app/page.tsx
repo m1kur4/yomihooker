@@ -1,6 +1,6 @@
-import DualWebSocketList from "./deck";
+import TextDeck from "./deck";
 import { AudioPlayer } from "@/components/audio-player";
-import { ScreenshotButton } from "@/components/screenshot-button";
+import { Screenshot } from "@/components/screenshot-button";
 
 const TITLE = "witch on the holy night";
 
@@ -16,12 +16,12 @@ export default function Home() {
       </div>
 
       <div className="mt-6">
-        <DualWebSocketList />
+        <TextDeck />
       </div>
 
       <div className="mt-auto flex items-center justify-center gap-4 pt-8">
         <AudioPlayer />
-        <ScreenshotButton />
+        <Screenshot />
       </div>
     </main>
   );

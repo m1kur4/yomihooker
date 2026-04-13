@@ -8,7 +8,7 @@ import { Clipboard } from "@/components/clipboard";
 import { Button } from "@/components/ui/button";
 import type { MessageData } from "@/lib/message-data";
 
-const DualWebSocketList: React.FC = () => {
+const TextDeck: React.FC = () => {
   const [messages, setMessages] = useState<MessageData[]>([]);
 
   const messageIdCounter = useRef<number>(0);
@@ -132,7 +132,7 @@ const DualWebSocketList: React.FC = () => {
         <p>Waiting for message...</p>
       ) : (
         messages.map((msg) => (
-          <MessageItem
+          <MessageCard
             key={msg.id}
             data={msg}
             onDelete={() => deleteMessage(msg.id)}
@@ -143,7 +143,7 @@ const DualWebSocketList: React.FC = () => {
   );
 };
 
-const MessageItem: React.FC<{
+const MessageCard: React.FC<{
   data: MessageData;
   onDelete: () => void;
 }> = ({ data, onDelete }) => {
@@ -242,4 +242,4 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default DualWebSocketList;
+export default TextDeck;
