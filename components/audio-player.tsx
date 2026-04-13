@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { LoaderCircle, Pause, Play, Volume2 } from "lucide-react";
+import { Download, LoaderCircle, Pause, Play, Volume2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -10,11 +10,13 @@ const DEFAULT_TEXT = "";
 type AudioPlayerProps = {
   text?: string;
   compact?: boolean;
+  filename?: string;
 };
 
 export function AudioPlayer({
   text: initialText = DEFAULT_TEXT,
   compact = false,
+  filename,
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
@@ -29,6 +31,9 @@ export function AudioPlayer({
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(1);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!compact) {
@@ -145,6 +150,64 @@ export function AudioPlayer({
     }
   };
 
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    return `${m}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  };
+
+  const formatFilename = (ts: string | undefined) => {
+    if (!ts) return "audio";
+    // "13/04/2026, 17:24:32" -> "2026_0413_172432"
+    const m = ts.match(/^(\d{2})\/(\d{2})\/(\d{4}),\s*(\d{2}):(\d{2}):(\d{2})$/);
+    if (!m) return ts;
+    const [, dd, mm, yyyy, hh, min, ss] = m;
+    return `${yyyy}_${mm}${dd}_${hh}${min}${ss}`;
+  };
+
+  const handleDownload = async () => {
+    if (isDownloading) return;
+
+    // If audio already fetched, download directly
+    if (objectUrlRef.current) {
+      const a = document.createElement("a");
+      a.href = objectUrlRef.current;
+      a.download = `${formatFilename(filename)}.wav`;
+      a.click();
+      return;
+    }
+
+    const trimmedText = text.trim();
+    if (!trimmedText) return;
+
+    setIsDownloading(true);
+    try {
+      const response = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: trimmedText }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error ?? `TTS request failed: ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      objectUrlRef.current = audioUrl;
+      lastTextRef.current = trimmedText;
+
+      const a = document.createElement("a");
+      a.href = audioUrl;
+      a.download = `${formatFilename(filename)}.wav`;
+      a.click();
+    } catch (err) {
+      console.error("Download failed:", err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const handleVolumeChange = (value: string) => {
     const nextVolume = Number(value);
     setVolume(nextVolume);
@@ -154,13 +217,37 @@ export function AudioPlayer({
     }
   };
 
+  const openPanel = () => {
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    setIsPanelOpen(true);
+  };
+
+  const closePanel = () => {
+    hideTimeoutRef.current = setTimeout(() => setIsPanelOpen(false), 500);
+  };
+
   if (compact) {
     return (
-      <div className="group/audio relative flex items-center">
-        <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 flex w-44 -translate-x-1/2 translate-y-1 flex-col gap-2 rounded-lg border border-border/70 bg-card/95 p-2 opacity-0 shadow-lg backdrop-blur transition-all duration-200 group-hover/audio:pointer-events-auto group-hover/audio:translate-y-0 group-hover/audio:opacity-100 group-focus-within/audio:pointer-events-auto group-focus-within/audio:translate-y-0 group-focus-within/audio:opacity-100">
-          <label htmlFor={progressId} className="sr-only">
-            Audio progress
-          </label>
+      <div
+        className="relative flex items-center"
+        onMouseEnter={openPanel}
+        onMouseLeave={closePanel}
+        onFocus={openPanel}
+        onBlur={closePanel}
+      >
+        {/* Floating panel */}
+        <div
+          className={[
+            "absolute bottom-full right-0 z-10 mb-3 w-44 rounded-xl border border-border/60 bg-card/98 px-2.5 py-2 shadow-xl backdrop-blur-md transition-all duration-200",
+            isPanelOpen
+              ? "pointer-events-auto translate-y-0 opacity-100"
+              : "pointer-events-none translate-y-1.5 opacity-0",
+          ].join(" ")}
+          onMouseEnter={openPanel}
+          onMouseLeave={closePanel}
+        >
+          {/* Progress bar */}
+          <label htmlFor={progressId} className="sr-only">Audio progress</label>
           <input
             id={progressId}
             type="range"
@@ -169,14 +256,13 @@ export function AudioPlayer({
             step="0.1"
             value={Math.min(currentTime, duration || 0)}
             onChange={(event) => handleProgressChange(event.target.value)}
-            className="h-1.5 w-full accent-foreground"
+            className="h-1 w-full accent-foreground"
           />
 
-          <div className="flex items-center gap-2">
-            <Volume2 className="size-3.5 shrink-0 text-muted-foreground" />
-            <label htmlFor={volumeId} className="sr-only">
-              Volume
-            </label>
+          {/* Volume + time + download */}
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <Volume2 className="size-3 shrink-0 text-muted-foreground/60" />
+            <label htmlFor={volumeId} className="sr-only">Volume</label>
             <input
               id={volumeId}
               type="range"
@@ -187,7 +273,31 @@ export function AudioPlayer({
               onChange={(event) => handleVolumeChange(event.target.value)}
               className="w-full accent-foreground"
             />
+            <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+              {formatTime(currentTime)}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => void handleDownload()}
+              disabled={isDownloading || !text.trim()}
+              className="shrink-0 text-muted-foreground hover:text-foreground"
+              aria-label="Download audio"
+              title="Download WAV"
+            >
+              {isDownloading ? (
+                <LoaderCircle className="size-3 animate-spin" />
+              ) : (
+                <Download className="size-3" />
+              )}
+            </Button>
           </div>
+
+          {/* Caret */}
+          <div className="absolute -bottom-1.5 right-2.5 size-3 rotate-45 border-b border-r border-border/60 bg-card/98" />
+          {/* Invisible bridge covering the mb-3 gap so hover stays active */}
+          <div className="absolute -bottom-3 left-0 right-0 h-3" />
         </div>
 
         <Button

@@ -177,7 +177,7 @@ const MessageItem: React.FC<{
         <div style={styles.originalText}>{data.original}</div>
 
         <div style={styles.actions}>
-          <AudioPlayer text={data.original} compact />
+          <AudioPlayer text={data.original} compact filename={data.timestamp} />
 
           <Button
             variant="outline"
