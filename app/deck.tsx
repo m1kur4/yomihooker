@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Trash2 } from "lucide-react";
 
-import { AudioPlayer } from "@/components/audio-player";
+import { AudioPlayer } from "@/components/audioplayer";
 import { Clipboard } from "@/components/clipboard";
 import { Button } from "@/components/ui/button";
 import type { MessageData } from "@/lib/message-data";

@@ -1,6 +1,6 @@
 import TextDeck from "./deck";
-import { AudioPlayer } from "@/components/audio-player";
-import { Screenshot } from "@/components/screenshot-button";
+import { AudioPlayer } from "@/components/audioplayer";
+import { Screenshot } from "@/components/screenshot";
 
 const TITLE = "witch on the holy night";
 
