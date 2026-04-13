@@ -14,7 +14,7 @@ export function ScreenshotButton() {
 
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
+        video: { displaySurface: "window" },
         audio: false,
       });
 
@@ -25,10 +25,11 @@ export function ScreenshotButton() {
       video.srcObject = stream;
       await video.play();
 
+      const scale = 0.5;
       const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      canvas.getContext("2d")!.drawImage(video, 0, 0, width, height);
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      canvas.getContext("2d")!.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       stream.getTracks().forEach((t) => t.stop());
 
@@ -37,7 +38,7 @@ export function ScreenshotButton() {
         const ts = new Date()
           .toLocaleString("en-GB", { timeZone: "Asia/Shanghai" })
           .replace(/[/:, ]+/g, "_");
-        const filename = `screenshot_${ts}.png`;
+        const filename = `screenshot_${ts}.jpg`;
         const form = new FormData();
         form.append("file", blob, filename);
         form.append("name", filename);
@@ -46,7 +47,7 @@ export function ScreenshotButton() {
         } catch (err) {
           console.error("Screenshot save failed:", err);
         }
-      }, "image/png");
+      }, "image/jpeg", 0.85);
     } catch (error) {
       // User cancelled or permission denied — silently ignore
       if (error instanceof Error && error.name !== "NotAllowedError") {
