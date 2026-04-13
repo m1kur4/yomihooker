@@ -5,6 +5,7 @@ import { Languages, Trash2 } from "lucide-react";
 
 import { AudioPlayer } from "@/components/audioplayer";
 import { Clipboard } from "@/components/clipboard";
+import { MineButton } from "@/components/mine-button";
 import { Button } from "@/components/ui/button";
 import type { MessageData } from "@/lib/message-data";
 
@@ -163,7 +164,10 @@ const MessageCard: React.FC<{
         >
           {data.timestamp}
         </div>
-        <Clipboard text={data.original} label="Copy original text" />
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          <MineButton data={data} />
+          <Clipboard text={data.original} label="Copy original text" />
+        </div>
       </div>
 
       <div

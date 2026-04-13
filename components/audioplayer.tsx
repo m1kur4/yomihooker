@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Download, LoaderCircle, Pause, Play, Volume2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { formatFilename, saveToDesktop } from "@/lib/media-utils";
 
 const DEFAULT_TEXT = "";
 
@@ -155,27 +156,11 @@ export function AudioPlayer({
     return `${m}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   };
 
-  const formatFilename = (ts: string | undefined) => {
-    if (!ts) return "audio";
-    // "13/04/2026, 17:24:32" -> "2026_0413_172432"
-    const m = ts.match(/^(\d{2})\/(\d{2})\/(\d{4}),\s*(\d{2}):(\d{2}):(\d{2})$/);
-    if (!m) return ts;
-    const [, dd, mm, yyyy, hh, min, ss] = m;
-    return `${yyyy}_${mm}${dd}_${hh}${min}${ss}`;
-  };
-
-  const saveToDesktop = async (blob: Blob, name: string) => {
-    const form = new FormData();
-    form.append("file", blob, name);
-    form.append("name", name);
-    const res = await fetch("/api/save-file", { method: "POST", body: form });
-    if (!res.ok) throw new Error(`Save failed: ${res.status}`);
-  };
 
   const handleDownload = async () => {
     if (isDownloading) return;
 
-    const wavName = `${formatFilename(filename)}.wav`;
+    const wavName = `${formatFilename(filename, "audio")}.wav`;
 
     // If audio already fetched, save directly
     if (objectUrlRef.current) {
