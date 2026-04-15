@@ -66,7 +66,7 @@ const TextDeck: React.FC = () => {
         return;
       }
 
-      wsOriginal = new WebSocket(config.textHook.wsUrl);
+      wsOriginal = new WebSocket(config.lunatranslator.wsUrl);
 
       wsOriginal.onmessage = async (event: MessageEvent<string>) => {
         const originalText = event.data;
@@ -75,7 +75,7 @@ const TextDeck: React.FC = () => {
 
         try {
           const response = await fetch(
-            `${config.textHook.translateUrl}?text=${encodeURIComponent(originalText)}`,
+            `${config.lunatranslator.translateUrl}?text=${encodeURIComponent(originalText)}`,
           );
 
           if (!response.ok) {

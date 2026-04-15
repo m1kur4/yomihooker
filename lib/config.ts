@@ -1,5 +1,5 @@
 export const config = {
-  textHook: {
+  lunatranslator: {
     wsUrl: "ws://localhost:2333/api/ws/text/origin",
     translateUrl: "http://127.0.0.1:2333/api/translate",
   },

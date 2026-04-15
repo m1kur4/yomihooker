@@ -20,20 +20,23 @@ No test suite exists yet.
 
 ## External Dependencies (must be running locally)
 
-| Service | Address | Purpose |
-|---|---|---|
-| Text hook server | `ws://localhost:2333/api/ws/text/origin` | WebSocket source of hooked text |
-| Translation API | `http://127.0.0.1:2333/api/translate?text=...` | Machine translation |
-| VOICEVOX TTS engine | `http://127.0.0.1:50021` | Japanese TTS synthesis (speaker `14`) |
-| AnkiConnect | `http://127.0.0.1:8765` | Anki note read/write via `/api/anki` proxy |
+All addresses are configured in `lib/config.ts`.
+
+| Service | Config key | Default address | Purpose |
+|---|---|---|---|
+| LunaTranslator (text hook) | `config.lunatranslator.wsUrl` | `ws://localhost:2333/api/ws/text/origin` | WebSocket source of hooked text |
+| LunaTranslator (translate) | `config.lunatranslator.translateUrl` | `http://127.0.0.1:2333/api/translate` | Machine translation |
+| VOICEVOX TTS engine | `config.voicevox.url` / `config.voicevox.speaker` | `http://127.0.0.1:50021`, speaker `14` | Japanese TTS synthesis |
+| AnkiConnect | `config.ankiConnect.url` | `http://127.0.0.1:8765` | Anki note read/write via `/api/anki` proxy |
 
 ## Architecture
 
 ```
 app/
-  page.tsx          — root page; composes TextDeck + AudioPlayer + Screenshot
-  deck.tsx          — "use client"; core UI: WebSocket listener, message list, MessageCard
-  layout.tsx        — root layout; injects ThemeSync and theme-init script
+  page.tsx          — root page; renders TextDeck
+  deck.tsx          — "use client"; WebSocket listener, message list (newest-first, top 10
+                       visible, older messages in a Collapsible), MessageCard
+  layout.tsx        — root layout; injects ThemeSync, theme-init script, and Navbar
   theme-sync.tsx    — syncs OS dark/light preference via .dark class
   globals.css       — Tailwind v4 + shadcn theme (oklch tokens, dark mode vars)
   anki/
@@ -43,10 +46,14 @@ app/
     messages/[id]/route.ts — DELETE a message by id
     tts/route.ts           — POST: proxies to VOICEVOX, returns audio/wav
     save-file/route.ts     — POST (multipart): writes blob to ~/Desktop
-    anki/route.ts          — POST: proxies to AnkiConnect at 127.0.0.1:8765 (avoids CORS)
+    anki/route.ts          — POST: proxies to AnkiConnect (avoids CORS)
 
 components/
-  audioplayer.tsx      — TTS playback; two modes: standalone panel or compact inline button
+  navbar.tsx           — sticky top nav; contains nav links + AudioPlayer + Screenshot
+  audioplayer.tsx      — TTS playback; two modes:
+                         • compact (inline icon-sm button, panel floats above)
+                         • non-compact (icon button in navbar, panel drops below with text input)
+                         Progress bar uses shadcn Slider; volume uses shadcn Progress (click to set)
   mine-button.tsx      — on click: captures screenshot + TTS audio + opens Anki dialog
   screenshot.tsx       — captures a window via getDisplayMedia, saves JPEG to desktop
   clipboard.tsx        — copy-to-clipboard button
@@ -54,13 +61,17 @@ components/
   note-card-form.tsx   — reusable shadcn form for viewing/editing an Anki note's fields;
                          used by both NoteCard (anki page) and MineButton (dialog)
   ui/button.tsx        — shadcn Button with extra size variants: icon-xs, icon-sm, icon-lg
+  ui/collapsible.tsx   — shadcn Collapsible (used in deck.tsx for older messages)
   ui/dialog.tsx        — shadcn Dialog
   ui/form.tsx          — shadcn Form primitives (wraps react-hook-form)
   ui/input.tsx         — shadcn Input
   ui/label.tsx         — shadcn Label
+  ui/progress.tsx      — shadcn Progress (used for volume display in AudioPlayer)
+  ui/slider.tsx        — shadcn Slider (used for audio progress bar in AudioPlayer)
   ui/textarea.tsx      — shadcn Textarea
 
 lib/
+  config.ts          — external service addresses (LunaTranslator, VOICEVOX, AnkiConnect)
   message-data.ts    — MessageData interface { id, original, translation, timestamp }
   message-store.ts   — file-based persistence; reads/writes data/messages.json
   anki-connect.ts    — ankiRequest(), storeMediaFileFromBlob(); shared AnkiConnect helpers
@@ -105,6 +116,7 @@ lib/
 - **Styling**: Tailwind v4 utility classes for layout/theming; inline `React.CSSProperties` objects for per-element overrides (see `deck.tsx`). Both coexist — don't consolidate them without reason.
 - **Button sizes**: use the custom variants `icon-xs`, `icon-sm`, `icon-lg` defined in `components/ui/button.tsx` rather than raw sizing classes.
 - **Screenshot must be called first inside a user-gesture handler** — `getDisplayMedia` requires an active user gesture and will throw `NotAllowedError` otherwise (see `mine-button.tsx`).
+- **External service addresses** live in `lib/config.ts` — never hard-code service URLs/ports in source files; always reference `config.*`.
 - **AnkiConnect is proxied** — never call `http://127.0.0.1:8765` directly from client code; use `ankiRequest()` which goes through `/api/anki` to avoid CORS.
 - **File fields in NoteCardForm** (`SentenceAudio`, `Picture`) store only the filename in the form; `wrapFileValue()` re-wraps them into Anki's expected format (`[sound:…]` / `<img src="…">`) on submit.
 - **Timestamps** use `en-GB` locale with `Asia/Shanghai` timezone: `new Date().toLocaleString("en-GB", { timeZone: "Asia/Shanghai" })`.
