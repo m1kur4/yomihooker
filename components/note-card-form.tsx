@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useForm, type ControllerRenderProps } from "react-hook-form";
-import { Upload } from "lucide-react";
+import { Upload, X } from "lucide-react";
 
 import { ankiRequest, storeMediaFileFromBlob } from "@/lib/anki-connect";
 import { Button } from "@/components/ui/button";
@@ -52,10 +52,12 @@ function FileInputField({
   field,
   fieldName,
   onPendingBlob,
+  onClear,
 }: {
   field: ControllerRenderProps<NoteFields, FieldName>;
   fieldName: string;
   onPendingBlob: (blob: File, filename: string) => void;
+  onClear: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -69,9 +71,33 @@ function FileInputField({
     if (inputRef.current) inputRef.current.value = "";
   };
 
+  const handleClear = () => {
+    field.onChange("");
+    onClear();
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
   return (
     <div className="flex gap-2">
-      <Input value={field.value} readOnly lang="ja" onChange={() => {}} />
+      <div className="relative flex-1">
+        <Input
+          value={field.value}
+          readOnly
+          lang="ja"
+          onChange={() => {}}
+          className="pr-7"
+        />
+        {field.value && (
+          <button
+            type="button"
+            aria-label={`Clear ${fieldName}`}
+            onClick={handleClear}
+            className="absolute inset-y-0 right-1.5 flex items-center text-muted-foreground hover:text-foreground"
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
       <input
         ref={inputRef}
         type="file"
@@ -138,6 +164,14 @@ export function NoteCardForm({
     setPendingBlobMap((prev) => ({ ...prev, [fieldName]: { blob, filename } }));
   };
 
+  const handleClear = (fieldName: "SentenceAudio" | "Picture") => {
+    setPendingBlobMap((prev) => {
+      const next = { ...prev };
+      delete next[fieldName];
+      return next;
+    });
+  };
+
   const onSubmit = async (data: NoteFields) => {
     setUpdateError(null);
     setUpdateSuccess(false);
@@ -158,7 +192,7 @@ export function NoteCardForm({
     const fields = Object.fromEntries(
       FIELD_ORDER.map((f) => [
         f,
-        FILE_FIELDS.has(f) ? wrapFileValue(f, data[f]) : data[f],
+        FILE_FIELDS.has(f) ? (data[f] ? wrapFileValue(f, data[f]) : "") : data[f],
       ]),
     );
 
@@ -196,6 +230,7 @@ export function NoteCardForm({
                     onPendingBlob={(blob, filename) =>
                       handlePendingBlob(fieldName as "SentenceAudio" | "Picture", blob, filename)
                     }
+                    onClear={() => handleClear(fieldName as "SentenceAudio" | "Picture")}
                   />
                 ) : (
                   <FormControl>
