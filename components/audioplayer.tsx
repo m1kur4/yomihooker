@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Download, LoaderCircle, Pause, Play, Volume2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import { audioFilename, fetchTtsBlob, saveToDesktop } from "@/lib/media-utils";
 
 const DEFAULT_TEXT = "";
@@ -22,8 +24,6 @@ export function AudioPlayer({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
   const lastTextRef = useRef<string>("");
-  const progressId = useId();
-  const volumeId = useId();
 
   const [text, setText] = useState(initialText);
   const [isLoading, setIsLoading] = useState(false);
@@ -126,12 +126,11 @@ export function AudioPlayer({
     }
   };
 
-  const handleProgressChange = (value: string) => {
-    const nextTime = Number(value);
-    setCurrentTime(nextTime);
+  const handleProgressChange = (value: number) => {
+    setCurrentTime(value);
 
     if (audioRef.current) {
-      audioRef.current.currentTime = nextTime;
+      audioRef.current.currentTime = value;
     }
   };
 
@@ -139,7 +138,6 @@ export function AudioPlayer({
     const m = Math.floor(s / 60);
     return `${m}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   };
-
 
   const handleDownload = async () => {
     if (isDownloading) return;
@@ -170,12 +168,11 @@ export function AudioPlayer({
     }
   };
 
-  const handleVolumeChange = (value: string) => {
-    const nextVolume = Number(value);
-    setVolume(nextVolume);
+  const handleVolumeChange = (value: number) => {
+    setVolume(value);
 
     if (audioRef.current) {
-      audioRef.current.volume = nextVolume;
+      audioRef.current.volume = value;
     }
   };
 
@@ -185,60 +182,64 @@ export function AudioPlayer({
   };
 
   const closePanel = () => {
-    hideTimeoutRef.current = setTimeout(() => setIsPanelOpen(false), 500);
+    hideTimeoutRef.current = setTimeout(() => setIsPanelOpen(false), 100);
   };
 
-  // Shared controls panel content (progress + volume + time + download)
+  // Shared controls panel content (progress + volume + download)
   const controlsPanel = (
-    <>
-      {/* Progress bar */}
-      <label htmlFor={progressId} className="sr-only">Audio progress</label>
-      <input
-        id={progressId}
-        type="range"
-        min="0"
+    <div className="flex items-center gap-1.5 pl-2.5">
+      {/* Progress slider */}
+      <Slider
+        aria-label="Audio progress"
+        min={0}
         max={duration || 0}
-        step="0.1"
-        value={Math.min(currentTime, duration || 0)}
-        onChange={(event) => handleProgressChange(event.target.value)}
-        className="h-1 w-full accent-foreground"
+        step={0.1}
+        value={[Math.min(currentTime, duration || 0)]}
+        onValueChange={([val]) => handleProgressChange(val)}
+        className="min-w-0 flex-1"
       />
-
-      {/* Volume + time + download */}
-      <div className="mt-1.5 flex items-center gap-1.5">
-        <Volume2 className="size-3 shrink-0 text-muted-foreground/60" />
-        <label htmlFor={volumeId} className="sr-only">Volume</label>
-        <input
-          id={volumeId}
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={volume}
-          onChange={(event) => handleVolumeChange(event.target.value)}
-          className="w-full accent-foreground"
-        />
-        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
-          {formatTime(currentTime)}
-        </span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          onClick={() => void handleDownload()}
-          disabled={isDownloading || !text.trim()}
-          className="shrink-0 text-muted-foreground hover:text-foreground"
-          aria-label="Download audio"
-          title="Download WAV"
-        >
-          {isDownloading ? (
-            <LoaderCircle className="size-3 animate-spin" />
-          ) : (
-            <Download className="size-3" />
-          )}
-        </Button>
+      {/* Current time */}
+      <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/80">
+        {formatTime(currentTime)}
+      </span>
+      {/* Volume icon + slider that expands on hover */}
+      <div className="group/vol flex shrink-0 items-center gap-1">
+        <Volume2 className="size-3 " />
+        <div className="w-0 overflow-hidden transition-[width] duration-200 ease-in-out group-hover/vol:w-14">
+          <div
+            aria-label="Volume"
+            role="slider"
+            aria-valuenow={Math.round(volume * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className="w-14 origin-left scale-x-0 cursor-pointer transition-transform duration-200 group-hover/vol:scale-x-100"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              handleVolumeChange(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)));
+            }}
+          >
+            <Progress value={volume * 100} />
+          </div>
+        </div>
       </div>
-    </>
+      {/* Download */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        onClick={() => void handleDownload()}
+        disabled={isDownloading || !text.trim()}
+        className="shrink-0"
+        aria-label="Download audio"
+        title="Download WAV"
+      >
+        {isDownloading ? (
+          <LoaderCircle className="size-3 animate-spin" />
+        ) : (
+          <Download className="size-3" />
+        )}
+      </Button>
+    </div>
   );
 
   if (compact) {
