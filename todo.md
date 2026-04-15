@@ -33,25 +33,8 @@ I want you to show lastest added anki note info in Anki page. Here are requireme
 1. There are japanese text within these data, you need to correctly display them
 
 
-`curl -X POST http://127.0.0.1:8765 \
-     -H "Content-Type: application/json" \
-     -d '{
-           "action": "findNotes",
-           "version": 6,
-           "params": {
-               "query": "added:1"
-           }
-         }'`
+well done, now i want you to change the mine-button components's fucntion. Here are requirements:
 
-`curl -X POST http://localhost:8765 \
-     -d '{"action": "getMediaDirPath", "version": 6}'`
-
-`curl -X POST http://127.0.0.1:8765 \
-     -H "Content-Type: application/json" \
-     -d '{
-           "action": "notesInfo",
-           "version": 6,
-           "params": {
-               "notes": [1776263671404]
-           }
-         }'`
+## Function
+1. 
+1. when click mine button, we want the screenshot to the 
