@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BookmarkPlus, LoaderCircle } from "lucide-react";
 
 import { ankiRequest, storeMediaFileFromBlob } from "@/lib/anki-connect";
-import { captureScreenshotAsBlob, formatFilename } from "@/lib/media-utils";
+import { audioFilename, captureScreenshotAsBlob, fetchTtsBlob, screenshotFilename } from "@/lib/media-utils";
 import type { MessageData } from "@/lib/message-data";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,22 +40,13 @@ export function MineButton({ data }: { data: MessageData }) {
     setPrepareError(null);
 
     // Screenshot MUST start here — getDisplayMedia requires the user gesture
-    const screenshotPromise = captureScreenshotAsBlob(data.timestamp).catch(
-      () => null,
-    );
+    const screenshotPromise = captureScreenshotAsBlob().catch(() => null);
 
     // TTS audio for the original text
     const audioPromise = (async () => {
       const trimmed = data.original.trim();
       if (!trimmed) return null;
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: trimmed }),
-      });
-      if (!res.ok) throw new Error(`TTS failed: ${res.status}`);
-      const blob = await res.blob();
-      return { blob, filename: `audio_${formatFilename(data.timestamp)}.wav` };
+      return fetchTtsBlob(trimmed);
     })().catch(() => null);
 
     // Fetch latest Anki note
@@ -83,15 +74,15 @@ export function MineButton({ data }: { data: MessageData }) {
       let pictureFilename = extractFilename(fields["Picture"]?.value ?? "");
       if (screenshot) {
         pictureFilename = await storeMediaFileFromBlob(
-          screenshot.blob,
-          screenshot.filename,
+          screenshot,
+          screenshotFilename(data.timestamp),
         );
       }
 
       // Upload TTS audio → Anki media; fall back to existing value on failure
-      let audioFilename = extractFilename(fields["SentenceAudio"]?.value ?? "");
+      let storedAudioFilename = extractFilename(fields["SentenceAudio"]?.value ?? "");
       if (audio) {
-        audioFilename = await storeMediaFileFromBlob(audio.blob, audio.filename);
+        storedAudioFilename = await storeMediaFileFromBlob(audio, audioFilename(data.timestamp));
       }
 
       // Append translation as new line in SentenceFurigana, but only if not already present
@@ -109,7 +100,7 @@ export function MineButton({ data }: { data: MessageData }) {
           Expression: fields["Expression"]?.value ?? "",
           Sentence: fields["Sentence"]?.value ?? "",
           SentenceFurigana: newFurigana,
-          SentenceAudio: audioFilename,
+          SentenceAudio: storedAudioFilename,
           Picture: pictureFilename,
         },
       });

@@ -1,4 +1,34 @@
 /**
+ * Fetch TTS audio from the local VOICEVOX proxy and return the WAV blob.
+ * Throws on network or server errors.
+ */
+export async function fetchTtsBlob(text: string): Promise<Blob> {
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error("Text is empty");
+
+  const res = await fetch("/api/tts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: trimmed }),
+  });
+
+  if (!res.ok) {
+    const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(payload?.error ?? `TTS request failed: ${res.status}`);
+  }
+
+  return res.blob();
+}
+
+/**
+ * Returns the standard audio filename for a given timestamp.
+ * Format: audio_<formatted-timestamp>.wav
+ */
+export function audioFilename(ts: string | undefined): string {
+  return `audio_${formatFilename(ts, "unknown")}.wav`;
+}
+
+/**
  * Format a locale timestamp string ("dd/mm/yyyy, hh:mm:ss") into "yyyy_mmdd_hhmmss".
  * Falls back to sanitizing the raw string if it doesn't match.
  */
@@ -18,7 +48,19 @@ export async function saveToDesktop(blob: Blob, name: string): Promise<void> {
   if (!res.ok) throw new Error(`Save failed: ${res.status}`);
 }
 
-async function captureScreenshotCore(ts?: string): Promise<{ blob: Blob; filename: string }> {
+/**
+ * Returns the standard screenshot filename for a given timestamp.
+ * Format: screenshot_<formatted-timestamp>.jpg
+ */
+export function screenshotFilename(ts?: string): string {
+  return `screenshot_${formatFilename(ts, "unknown")}.jpg`;
+}
+
+/**
+ * Capture a window screenshot and return the Blob.
+ * Must be called synchronously within a user-gesture handler (getDisplayMedia requirement).
+ */
+export async function captureScreenshotAsBlob(): Promise<Blob> {
   const stream = await navigator.mediaDevices.getDisplayMedia({
     video: { displaySurface: "window" },
     audio: false,
@@ -37,44 +79,12 @@ async function captureScreenshotCore(ts?: string): Promise<{ blob: Blob; filenam
   canvas.height = Math.round(height * scale);
   canvas.getContext("2d")!.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  const windowName = track.label
-    .replace(/[\\/:*?"<>|]+/g, "")
-    .trim()
-    .replace(/\s+/g, "_");
-
   stream.getTracks().forEach((t) => t.stop());
 
-  const formattedTs = ts
-    ? formatFilename(ts)
-    : formatFilename(new Date().toLocaleString("en-GB", { timeZone: "Asia/Shanghai" }));
-  const filename = `${windowName || "screenshot"}_${formattedTs}.jpg`;
-
-  const blob = await new Promise<Blob>((resolve, reject) => {
+  return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((b) => {
       if (!b) reject(new Error("Canvas toBlob returned null"));
       else resolve(b);
     }, "image/jpeg", 0.85);
   });
-
-  return { blob, filename };
-}
-
-/**
- * Capture a window screenshot and save to Desktop.
- * @param ts  Optional timestamp string to embed in the filename.
- *            If omitted, the current time is used.
- */
-export async function captureScreenshot(ts?: string): Promise<void> {
-  const { blob, filename } = await captureScreenshotCore(ts);
-  await saveToDesktop(blob, filename);
-}
-
-/**
- * Capture a window screenshot and return the Blob + filename without saving.
- * Must be called synchronously within a user-gesture handler.
- */
-export async function captureScreenshotAsBlob(
-  ts?: string,
-): Promise<{ blob: Blob; filename: string }> {
-  return captureScreenshotCore(ts);
 }

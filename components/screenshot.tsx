@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Camera, LoaderCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { captureScreenshot } from "@/lib/media-utils";
+import { captureScreenshotAsBlob, saveToDesktop, screenshotFilename } from "@/lib/media-utils";
 
 export function Screenshot() {
   const [isCapturing, setIsCapturing] = useState(false);
@@ -14,7 +14,8 @@ export function Screenshot() {
     setIsCapturing(true);
 
     try {
-      await captureScreenshot();
+      const blob = await captureScreenshotAsBlob();
+      await saveToDesktop(blob, screenshotFilename());
     } catch (error) {
       if (error instanceof Error && error.name !== "NotAllowedError") {
         console.error("Screenshot failed:", error);

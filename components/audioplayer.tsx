@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Download, LoaderCircle, Pause, Play, Volume2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { formatFilename, saveToDesktop } from "@/lib/media-utils";
+import { audioFilename, fetchTtsBlob, saveToDesktop } from "@/lib/media-utils";
 
 const DEFAULT_TEXT = "";
 
@@ -96,23 +96,7 @@ export function AudioPlayer({
     setError(null);
 
     try {
-      const response = await fetch("/api/tts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: trimmedText }),
-      });
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as
-          | { error?: string }
-          | null;
-
-        throw new Error(payload?.error ?? `TTS request failed: ${response.status}`);
-      }
-
-      const audioBlob = await response.blob();
+      const audioBlob = await fetchTtsBlob(trimmedText);
 
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current);
@@ -160,7 +144,7 @@ export function AudioPlayer({
   const handleDownload = async () => {
     if (isDownloading) return;
 
-    const wavName = `${formatFilename(filename, "audio")}.wav`;
+    const wavName = audioFilename(filename);
 
     // If audio already fetched, save directly
     if (objectUrlRef.current) {
@@ -174,22 +158,10 @@ export function AudioPlayer({
 
     setIsDownloading(true);
     try {
-      const response = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: trimmedText }),
-      });
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(payload?.error ?? `TTS request failed: ${response.status}`);
-      }
-
-      const audioBlob = await response.blob();
+      const audioBlob = await fetchTtsBlob(trimmedText);
       const audioUrl = URL.createObjectURL(audioBlob);
       objectUrlRef.current = audioUrl;
       lastTextRef.current = trimmedText;
-
       await saveToDesktop(audioBlob, wavName);
     } catch (err) {
       console.error("Download failed:", err);
