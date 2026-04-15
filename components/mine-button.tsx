@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { BookmarkPlus, LoaderCircle } from "lucide-react";
 
-import { ankiRequest, storeMediaFileFromBlob } from "@/lib/anki-connect";
+import { ankiRequest } from "@/lib/anki-connect";
 import { audioFilename, captureScreenshotAsBlob, fetchTtsBlob, screenshotFilename } from "@/lib/media-utils";
 import type { MessageData } from "@/lib/message-data";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ export function MineButton({ data }: { data: MessageData }) {
   const [noteState, setNoteState] = useState<{
     noteId: number;
     defaultValues: NoteFields;
+    pendingBlobs: Partial<Record<"SentenceAudio" | "Picture", Blob>>;
   } | null>(null);
   const [prepareError, setPrepareError] = useState<string | null>(null);
 
@@ -70,21 +71,6 @@ export function MineButton({ data }: { data: MessageData }) {
 
       const { fields } = note;
 
-      // Upload screenshot → Anki media; fall back to existing value on failure
-      let pictureFilename = extractFilename(fields["Picture"]?.value ?? "");
-      if (screenshot) {
-        pictureFilename = await storeMediaFileFromBlob(
-          screenshot,
-          screenshotFilename(data.timestamp),
-        );
-      }
-
-      // Upload TTS audio → Anki media; fall back to existing value on failure
-      let storedAudioFilename = extractFilename(fields["SentenceAudio"]?.value ?? "");
-      if (audio) {
-        storedAudioFilename = await storeMediaFileFromBlob(audio, audioFilename(data.timestamp));
-      }
-
       // Append translation as new line in SentenceFurigana, but only if not already present
       const existingFurigana = fields["SentenceFurigana"]?.value ?? "";
       const newFurigana =
@@ -100,8 +86,12 @@ export function MineButton({ data }: { data: MessageData }) {
           Expression: fields["Expression"]?.value ?? "",
           Sentence: fields["Sentence"]?.value ?? "",
           SentenceFurigana: newFurigana,
-          SentenceAudio: storedAudioFilename,
-          Picture: pictureFilename,
+          SentenceAudio: audio ? audioFilename(data.timestamp) : extractFilename(fields["SentenceAudio"]?.value ?? ""),
+          Picture: screenshot ? screenshotFilename(data.timestamp) : extractFilename(fields["Picture"]?.value ?? ""),
+        },
+        pendingBlobs: {
+          ...(audio ? { SentenceAudio: audio } : {}),
+          ...(screenshot ? { Picture: screenshot } : {}),
         },
       });
       setMineKey((k) => k + 1);
@@ -136,6 +126,7 @@ export function MineButton({ data }: { data: MessageData }) {
               key={mineKey}
               noteId={noteState.noteId}
               defaultValues={noteState.defaultValues}
+              pendingBlobs={noteState.pendingBlobs}
               onSuccess={() => setDialogOpen(false)}
               extraActions={
                 <Button
