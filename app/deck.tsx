@@ -1,12 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Languages, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Languages, Trash2 } from "lucide-react";
 
 import { AudioPlayer } from "@/components/audioplayer";
 import { Clipboard } from "@/components/clipboard";
 import { MineButton } from "@/components/mine-button";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import type { MessageData } from "@/lib/message-data";
 
 const TextDeck: React.FC = () => {
@@ -127,19 +132,54 @@ const TextDeck: React.FC = () => {
     };
   }, []);
 
+  const reversed = [...messages].reverse();
+  const visible = reversed.slice(0, 10);
+  const hidden = reversed.slice(10);
+  const [olderOpen, setOlderOpen] = useState(false);
+
   return (
     <div style={styles.container}>
-      {messages.length === 0 ? (
-        <p>Waiting for text...</p>
-      ) : (
-        messages.map((msg) => (
-          <MessageCard
-            key={msg.id}
-            data={msg}
-            onDelete={() => deleteMessage(msg.id)}
-          />
-        ))
-      )}
+      <Collapsible open={olderOpen} onOpenChange={setOlderOpen}>
+          {visible.map((msg) => (
+            <MessageCard
+              key={msg.id}
+              data={msg}
+              onDelete={() => deleteMessage(msg.id)}
+            />
+          ))}
+          {hidden.length > 0 && (
+            <>
+              <CollapsibleContent>
+                {hidden.map((msg) => (
+                  <MessageCard
+                    key={msg.id}
+                    data={msg}
+                    onDelete={() => deleteMessage(msg.id)}
+                  />
+                ))}
+              </CollapsibleContent>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5 text-muted-foreground"
+                >
+                  {olderOpen ? (
+                    <>
+                      <ChevronUp className="size-4" />
+                      Show less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="size-4" />
+                      {hidden.length} older messages
+                    </>
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+            </>
+          )}
+        </Collapsible>
     </div>
   );
 };
