@@ -133,7 +133,7 @@ export function NoteCard() {
   return (
     <div className="w-full max-w-xl rounded-xl border border-border bg-card p-6">
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Latest Anki Note</h2>
+        <h2 className="text-xl font-semibold">Latest Anki Note</h2>
         {noteId !== null && (
           <span className="text-xs text-muted-foreground">ID: {noteId}</span>
         )}
@@ -148,7 +148,7 @@ export function NoteCard() {
               name={fieldName}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">{fieldName}</FormLabel>
+                  <FormLabel className="text-lg">{fieldName}</FormLabel>
                   <FormControl>
                     {FILE_FIELDS.has(fieldName) ? (
                       <Input {...field} readOnly lang="ja" />
