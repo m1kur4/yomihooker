@@ -1,7 +1,9 @@
 export const runtime = "nodejs";
 
-const ENGINE_URL = "http://127.0.0.1:50021";
-const SPEAKER = "14";
+import { config } from "@/lib/config";
+
+const ENGINE_URL = config.voicevox.url;
+const SPEAKER = config.voicevox.speaker;
 
 type TtsRequest = {
   text?: string;

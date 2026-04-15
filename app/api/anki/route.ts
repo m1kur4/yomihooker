@@ -1,6 +1,8 @@
 export const runtime = "nodejs";
 
-const ANKI_URL = "http://127.0.0.1:8765";
+import { config } from "@/lib/config";
+
+const ANKI_URL = config.ankiConnect.url;
 
 export async function POST(request: Request) {
   let body: unknown;

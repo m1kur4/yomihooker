@@ -12,6 +12,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { config } from "@/lib/config";
 import type { MessageData } from "@/lib/message-data";
 
 const TextDeck: React.FC = () => {
@@ -65,7 +66,7 @@ const TextDeck: React.FC = () => {
         return;
       }
 
-      wsOriginal = new WebSocket("ws://localhost:2333/api/ws/text/origin");
+      wsOriginal = new WebSocket(config.textHook.wsUrl);
 
       wsOriginal.onmessage = async (event: MessageEvent<string>) => {
         const originalText = event.data;
@@ -74,7 +75,7 @@ const TextDeck: React.FC = () => {
 
         try {
           const response = await fetch(
-            `http://127.0.0.1:2333/api/translate?text=${encodeURIComponent(originalText)}`,
+            `${config.textHook.translateUrl}?text=${encodeURIComponent(originalText)}`,
           );
 
           if (!response.ok) {
