@@ -18,12 +18,7 @@ export async function saveToDesktop(blob: Blob, name: string): Promise<void> {
   if (!res.ok) throw new Error(`Save failed: ${res.status}`);
 }
 
-/**
- * Capture a window screenshot and save to Desktop.
- * @param ts  Optional timestamp string to embed in the filename.
- *            If omitted, the current time is used.
- */
-export async function captureScreenshot(ts?: string): Promise<void> {
+async function captureScreenshotCore(ts?: string): Promise<{ blob: Blob; filename: string }> {
   const stream = await navigator.mediaDevices.getDisplayMedia({
     video: { displaySurface: "window" },
     audio: false,
@@ -54,15 +49,32 @@ export async function captureScreenshot(ts?: string): Promise<void> {
     : formatFilename(new Date().toLocaleString("en-GB", { timeZone: "Asia/Shanghai" }));
   const filename = `${windowName || "screenshot"}_${formattedTs}.jpg`;
 
-  await new Promise<void>((resolve, reject) => {
-    canvas.toBlob(async (blob) => {
-      if (!blob) { resolve(); return; }
-      try {
-        await saveToDesktop(blob, filename);
-        resolve();
-      } catch (e) {
-        reject(e);
-      }
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((b) => {
+      if (!b) reject(new Error("Canvas toBlob returned null"));
+      else resolve(b);
     }, "image/jpeg", 0.85);
   });
+
+  return { blob, filename };
+}
+
+/**
+ * Capture a window screenshot and save to Desktop.
+ * @param ts  Optional timestamp string to embed in the filename.
+ *            If omitted, the current time is used.
+ */
+export async function captureScreenshot(ts?: string): Promise<void> {
+  const { blob, filename } = await captureScreenshotCore(ts);
+  await saveToDesktop(blob, filename);
+}
+
+/**
+ * Capture a window screenshot and return the Blob + filename without saving.
+ * Must be called synchronously within a user-gesture handler.
+ */
+export async function captureScreenshotAsBlob(
+  ts?: string,
+): Promise<{ blob: Blob; filename: string }> {
+  return captureScreenshotCore(ts);
 }

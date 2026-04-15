@@ -33,8 +33,11 @@ I want you to show lastest added anki note info in Anki page. Here are requireme
 1. There are japanese text within these data, you need to correctly display them
 
 
-well done, now i want you to change the mine-button components's fucntion. Here are requirements:
+well done, now i want you to make the mine-button components can change anki note info fucntion. Here are requirements:
 
 ## Function
-1. 
-1. when click mine button, we want the screenshot to the 
+
+1. First, the original mine button's function is discard
+2. When click mine button, there is a Dialog window open (using https://ui.shadcn.com/docs/components/radix/dialog as ui), it's contents is notecard form (note-card.tsx 's form) of lasted added anki card. There is a cancel button on the left of summit button which is different in anki page. When cancel button clicked, this dialog window closed.
+3. you may need to rewirte nodtcard' form as a single component
+4. When the mine button clicked, first,the translation text of message will be insert as SentenceFurigana's new line. Next, the audio of message card' original text will replace SentenceAudio field. Finally take the screenshot to replace Picture field.
