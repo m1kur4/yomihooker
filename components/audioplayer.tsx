@@ -188,6 +188,59 @@ export function AudioPlayer({
     hideTimeoutRef.current = setTimeout(() => setIsPanelOpen(false), 500);
   };
 
+  // Shared controls panel content (progress + volume + time + download)
+  const controlsPanel = (
+    <>
+      {/* Progress bar */}
+      <label htmlFor={progressId} className="sr-only">Audio progress</label>
+      <input
+        id={progressId}
+        type="range"
+        min="0"
+        max={duration || 0}
+        step="0.1"
+        value={Math.min(currentTime, duration || 0)}
+        onChange={(event) => handleProgressChange(event.target.value)}
+        className="h-1 w-full accent-foreground"
+      />
+
+      {/* Volume + time + download */}
+      <div className="mt-1.5 flex items-center gap-1.5">
+        <Volume2 className="size-3 shrink-0 text-muted-foreground/60" />
+        <label htmlFor={volumeId} className="sr-only">Volume</label>
+        <input
+          id={volumeId}
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          value={volume}
+          onChange={(event) => handleVolumeChange(event.target.value)}
+          className="w-full accent-foreground"
+        />
+        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+          {formatTime(currentTime)}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => void handleDownload()}
+          disabled={isDownloading || !text.trim()}
+          className="shrink-0 text-muted-foreground hover:text-foreground"
+          aria-label="Download audio"
+          title="Download WAV"
+        >
+          {isDownloading ? (
+            <LoaderCircle className="size-3 animate-spin" />
+          ) : (
+            <Download className="size-3" />
+          )}
+        </Button>
+      </div>
+    </>
+  );
+
   if (compact) {
     return (
       <div
@@ -197,7 +250,7 @@ export function AudioPlayer({
         onFocus={openPanel}
         onBlur={closePanel}
       >
-        {/* Floating panel */}
+        {/* Floating panel — rises above the button */}
         <div
           className={[
             "absolute bottom-full right-0 z-10 mb-3 w-44 rounded-xl border border-border/60 bg-card/98 px-2.5 py-2 shadow-xl backdrop-blur-md transition-all duration-200",
@@ -208,55 +261,8 @@ export function AudioPlayer({
           onMouseEnter={openPanel}
           onMouseLeave={closePanel}
         >
-          {/* Progress bar */}
-          <label htmlFor={progressId} className="sr-only">Audio progress</label>
-          <input
-            id={progressId}
-            type="range"
-            min="0"
-            max={duration || 0}
-            step="0.1"
-            value={Math.min(currentTime, duration || 0)}
-            onChange={(event) => handleProgressChange(event.target.value)}
-            className="h-1 w-full accent-foreground"
-          />
-
-          {/* Volume + time + download */}
-          <div className="mt-1.5 flex items-center gap-1.5">
-            <Volume2 className="size-3 shrink-0 text-muted-foreground/60" />
-            <label htmlFor={volumeId} className="sr-only">Volume</label>
-            <input
-              id={volumeId}
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={volume}
-              onChange={(event) => handleVolumeChange(event.target.value)}
-              className="w-full accent-foreground"
-            />
-            <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
-              {formatTime(currentTime)}
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => void handleDownload()}
-              disabled={isDownloading || !text.trim()}
-              className="shrink-0 text-muted-foreground hover:text-foreground"
-              aria-label="Download audio"
-              title="Download WAV"
-            >
-              {isDownloading ? (
-                <LoaderCircle className="size-3 animate-spin" />
-              ) : (
-                <Download className="size-3" />
-              )}
-            </Button>
-          </div>
-
-          {/* Caret */}
+          {controlsPanel}
+          {/* Caret pointing down */}
           <div className="absolute -bottom-1.5 right-2.5 size-3 rotate-45 border-b border-r border-border/60 bg-card/98" />
           {/* Invisible bridge covering the mb-3 gap so hover stays active */}
           <div className="absolute -bottom-3 left-0 right-0 h-3" />
@@ -283,47 +289,59 @@ export function AudioPlayer({
     );
   }
 
+  // Non-compact (navbar): button + hover panel that drops down, with text input inside
   return (
-    <section className="w-full max-w-3xl rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm backdrop-blur sm:p-5">
-      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-        <Volume2 className="size-4" />
-        Japanese Text To Speech
-      </div>
-
-      <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+    <div
+      className="relative flex items-center"
+      onMouseEnter={openPanel}
+      onMouseLeave={closePanel}
+      onFocus={openPanel}
+      onBlur={closePanel}
+    >
+      {/* Floating panel — drops below the button */}
+      <div
+        className={[
+          "absolute top-full right-0 z-10 mt-3 w-72 rounded-xl border border-border/60 bg-card/98 px-2.5 py-2 shadow-xl backdrop-blur-md transition-all duration-200",
+          isPanelOpen
+            ? "pointer-events-auto translate-y-0 opacity-100"
+            : "pointer-events-none -translate-y-1.5 opacity-0",
+        ].join(" ")}
+        onMouseEnter={openPanel}
+        onMouseLeave={closePanel}
+      >
+        {/* Text input */}
         <input
           type="text"
           value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder="Type Japanese text"
-          className="h-11 flex-1 rounded-xl border border-input bg-background px-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="mb-2 w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
         />
-
-        <Button
-          type="button"
-          size="lg"
-          onClick={() => void handlePlay()}
-          disabled={!text.trim() || isLoading}
-          className="min-w-30"
-        >
-          {isLoading ? (
-            <LoaderCircle className="animate-spin" />
-          ) : isPlaying ? (
-            <Pause />
-          ) : (
-            <Play />
-          )}
-          {isLoading ? "Generating" : isPlaying ? "Pause" : "Play"}
-        </Button>
+        {controlsPanel}
+        {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
+        {/* Caret pointing up */}
+        <div className="absolute -top-1.5 right-2.5 size-3 rotate-45 border-t border-l border-border/60 bg-card/98" />
+        {/* Invisible bridge covering the mt-3 gap so hover stays active */}
+        <div className="absolute -top-3 left-0 right-0 h-3" />
       </div>
 
-      {error ? (
-        <p className="mt-3 text-sm text-destructive">{error}</p>
-      ) : (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Uses the local VOICEVOX engine on `127.0.0.1:50021` with speaker `14`.
-        </p>
-      )}
-    </section>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        onClick={() => void handlePlay()}
+        disabled={!text.trim() || isLoading}
+        aria-label={isPlaying ? "Pause audio" : "Play audio"}
+        title={error ?? (isPlaying ? "Pause audio" : "Play audio")}
+      >
+        {isLoading ? (
+          <LoaderCircle className="animate-spin" />
+        ) : isPlaying ? (
+          <Pause />
+        ) : (
+          <Play />
+        )}
+      </Button>
+    </div>
   );
 }

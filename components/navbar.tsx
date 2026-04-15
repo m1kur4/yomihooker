@@ -8,6 +8,8 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
+import { AudioPlayer } from "@/components/audioplayer";
+import { Screenshot } from "@/components/screenshot";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -43,6 +45,10 @@ export function Navbar() {
             ))}
           </NavigationMenuList>
         </NavigationMenu>
+        <div className="ml-auto flex items-center gap-2">
+          <AudioPlayer />
+          <Screenshot />
+        </div>
       </div>
     </header>
   );
