@@ -20,7 +20,7 @@ import { useDeckStats } from "@/lib/deck-stats-context";
 import { useSettings, type AppSettings } from "@/lib/settings-context";
 import { cn } from "@/lib/utils";
 
-const APP_NAME = "Yomihook";
+const APP_NAME = "Yomihooker";
 const NAV_ITEMS = [{ label: "Anki", href: "/anki" }];
 
 function SettingsPopover() {

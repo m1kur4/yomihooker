@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Yomihook",
+  title: "Yomihooker",
   description: "Japanese reading tool with text hooking, translation, TTS, and Anki mining",
 };
 

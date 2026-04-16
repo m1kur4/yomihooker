@@ -1,4 +1,4 @@
-# Yomihook
+# Yomihooker
 
 A Japanese reading tool that hooks into a local text-hook server, displays captured text with machine translations, plays TTS audio via VOICEVOX, and mines vocabulary cards into Anki.
 
@@ -17,7 +17,7 @@ A Japanese reading tool that hooks into a local text-hook server, displays captu
 
 ## Prerequisites
 
-The following services must be running locally before starting Yomihook:
+The following services must be running locally before starting Yomihooker:
 
 | Service | Default port | Purpose |
 |---|---|---|
@@ -45,7 +45,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Database
 
-Yomihook uses SQLite via Prisma. The database file lives at `data/data.db` (gitignored).
+Yomihooker uses SQLite via Prisma. The database file lives at `data/data.db` (gitignored).
 
 ```bash
 # Apply migrations
