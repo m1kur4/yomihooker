@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TextHooker",
-  description: "Help learn japanese",
+  title: "Yomihook",
+  description: "Japanese reading tool with text hooking, translation, TTS, and Anki mining",
 };
 
 export default function RootLayout({

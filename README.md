@@ -1,40 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Yomihook
 
-## About
+A Japanese reading tool that hooks into a local text-hook server, displays captured text with machine translations, plays TTS audio via VOICEVOX, and mines vocabulary cards into Anki.
 
-TextHooker is a Japanese language learning tool. It connects via WebSocket to a local text-hook server, displays hooked text alongside machine translations, plays Japanese TTS audio via a local VOICEVOX engine, and integrates with Anki via AnkiConnect to aid vocabulary card mining.
+## Features
+
+- **Text hooking** — connects via WebSocket to [LunaTranslator](https://github.com/HIllya51/LunaTranslator) and displays captured text in real time
+- **Machine translation** — fetches and shows translations alongside each hooked line
+- **TTS playback** — synthesizes Japanese audio through a local VOICEVOX engine
+- **Anki card mining** — captures a screenshot, generates TTS audio, and pre-fills an Anki note via AnkiConnect with one click
+- **Deck management** — organise sessions into named decks; messages are persisted in a local SQLite database
+- **Reading stats** — tracks character count for the active deck
+
+## Preview
+
+![Alt text](public/preview.jpg)
+
+## Prerequisites
+
+The following services must be running locally before starting Yomihook:
+
+| Service | Default port | Purpose |
+|---|---|---|
+| [LunaTranslator](https://github.com/HIllya51/LunaTranslator) | 2333 | WebSocket text hook + machine translation |
+| [VOICEVOX](https://voicevox.hiroshiba.jp/) | 50021 | Japanese TTS synthesis |
+| [AnkiConnect](https://foosoft.net/projects/anki-connect/) | 8765 | Anki note read/write |
+
+Ports can be changed in the in-app settings (gear icon in the navbar) or directly in `config.toml`.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`config.toml` at the project root is the single source of truth for service ports. It has two sections:
 
-## Learn More
+- **Active settings** (`[lunatranslator]`, `[voicevox]`, `[anki_connect]`) — written by the in-app settings UI
+- **Reset targets** (`[defaults.*]`) — never overwritten by the UI; edit manually to change what "Reset defaults" restores
 
-To learn more about Next.js, take a look at the following resources:
+## Database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Yomihook uses SQLite via Prisma. The database file lives at `data/data.db` (gitignored).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# Apply migrations
+npx prisma migrate deploy --config ./prisma/config.ts
 
-## Deploy on Vercel
+# Seed from legacy JSON files (one-time migration)
+npx prisma db seed --config ./prisma/config.ts
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tech Stack
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js](https://nextjs.org/) 16 (App Router)
+- [Prisma](https://www.prisma.io/) 7 + SQLite via `@prisma/adapter-libsql`
+- [Tailwind CSS](https://tailwindcss.com/) v4
+- [shadcn/ui](https://ui.shadcn.com/) components
+- [smol-toml](https://github.com/nicolo-ribaudo/smol-toml) for config file I/O
