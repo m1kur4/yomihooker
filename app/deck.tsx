@@ -131,7 +131,7 @@ const TextDeck: React.FC<{ deckId: number }> = ({ deckId }) => {
       isCancelled = true;
       wsOriginal?.close();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [deckId]);
 
   const reversed = [...messages].reverse();
   const visible = reversed.slice(0, 10);

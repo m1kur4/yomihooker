@@ -8,3 +8,5 @@ Now, i want to have a many textDecks in "/" path, you can click these deck and c
 2. These decks are arranged in a grid. There is an add icon button following the last one, it's function is to create new deck, when click will show up a shadcn Dialog, let user input deck name and upload cover picture from disk
 3. In "/{decktname}" path page, contents is same as current project's deck components, expect besides adding a path bar, under the top navbar. This path bar using https://ui.shadcn.com/docs/components/radix/breadcrumb to show clikable path routing
 4. Let's Mirate the current messages into a new Deck, deckname = 魔法使いの夜， cover = https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSzVcmxmssTGFK_mrEOsxUL7loX8xOMgVs0_5RFPQ8n2vyuxiFMXE0BIIWWD6qJjN4fWIrKSg&s=10
+
+there's a problem, i only want websocket append message to one current active deck at a time, and only when i visit that deck.

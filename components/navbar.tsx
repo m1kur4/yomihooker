@@ -13,7 +13,7 @@ import { Screenshot } from "@/components/screenshot";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { label: "Text", href: "/" },
+  { label: "Home", href: "/" },
   { label: "Anki", href: "/anki" },
 ];
 
