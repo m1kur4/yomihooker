@@ -41,7 +41,7 @@ export default async function DeckPage({
         </BreadcrumbList>
       </Breadcrumb>
 
-      <TextDeck deckId={id} />
+      <TextDeck deckId={id} deckName={deck.name} />
     </main>
   );
 }

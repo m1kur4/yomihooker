@@ -15,7 +15,7 @@ import {
 import { config } from "@/lib/config";
 import type { MessageData } from "@/lib/message-data";
 
-const TextDeck: React.FC<{ deckId: number }> = ({ deckId }) => {
+const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({ deckId, deckName }) => {
   const [messages, setMessages] = useState<MessageData[]>([]);
 
   const messageIdCounter = useRef<number>(0);
@@ -140,6 +140,7 @@ const TextDeck: React.FC<{ deckId: number }> = ({ deckId }) => {
 
   return (
     <div style={styles.container}>
+      <h1 className="mb-10 text-2xl font-bold text-indigo-600 tracking-tight flex justify-center">{deckName}</h1>
       <Collapsible open={olderOpen} onOpenChange={setOlderOpen}>
           {visible.map((msg) => (
             <MessageCard

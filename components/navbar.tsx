@@ -12,6 +12,7 @@ import { AudioPlayer } from "@/components/audioplayer";
 import { Screenshot } from "@/components/screenshot";
 import { cn } from "@/lib/utils";
 
+const APP_NAME = "TextHooker";
 const NAV_ITEMS = [
   { label: "Home", href: "/" },
   { label: "Anki", href: "/anki" },
@@ -23,8 +24,8 @@ export function Navbar() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center px-4 gap-6">
-        <span className="text-lg font-bold tracking-tight text-green-500">
-          TextHooker
+        <span className="text-xl font-extrabold tracking-tight text-green-500">
+          {APP_NAME}
         </span>
         <NavigationMenu viewport={false}>
           <NavigationMenuList className="gap-0">
