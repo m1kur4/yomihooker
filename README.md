@@ -31,6 +31,7 @@ Ports can be changed in the in-app settings (gear icon in the navbar) or directl
 
 ```bash
 npm install
+npx prisma generate --config ./prisma/config.ts
 npm run dev
 ```
 
