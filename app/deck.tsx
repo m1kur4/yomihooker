@@ -15,12 +15,12 @@ import {
 import { config } from "@/lib/config";
 import type { MessageData } from "@/lib/message-data";
 
-const TextDeck: React.FC = () => {
+const TextDeck: React.FC<{ deckId: number }> = ({ deckId }) => {
   const [messages, setMessages] = useState<MessageData[]>([]);
 
   const messageIdCounter = useRef<number>(0);
   const deleteMessage = async (messageId: number) => {
-    const response = await fetch(`/api/messages/${messageId}`, {
+    const response = await fetch(`/api/decks/${deckId}/messages/${messageId}`, {
       method: "DELETE",
     });
 
@@ -40,7 +40,7 @@ const TextDeck: React.FC = () => {
 
     const syncMessages = async () => {
       try {
-        const response = await fetch("/api/messages");
+        const response = await fetch(`/api/decks/${deckId}/messages`);
 
         if (!response.ok) {
           throw new Error(`Messages request failed: ${response.status}`);
@@ -98,7 +98,7 @@ const TextDeck: React.FC = () => {
         };
 
         try {
-          const response = await fetch("/api/messages", {
+          const response = await fetch(`/api/decks/${deckId}/messages`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -131,7 +131,7 @@ const TextDeck: React.FC = () => {
       isCancelled = true;
       wsOriginal?.close();
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reversed = [...messages].reverse();
   const visible = reversed.slice(0, 10);

@@ -1,11 +1,12 @@
-import TextDeck from "./deck";
+import { DeckGrid } from "@/components/deck-grid";
+import { readDecks } from "@/lib/deck-store";
 
-export default function Home() {
+export default async function Home() {
+  const decks = await readDecks();
+
   return (
-    <main className="flex min-h-screen flex-col px-4 py-6">
-      <div className="mt-6">
-        <TextDeck />
-      </div>
+    <main className="min-h-screen px-6 py-8">
+      <DeckGrid initialDecks={decks} />
     </main>
   );
 }

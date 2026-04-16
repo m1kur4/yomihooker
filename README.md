@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## About
+
+TextHooker is a Japanese language learning tool. It connects via WebSocket to a local text-hook server, displays hooked text alongside machine translations, plays Japanese TTS audio via a local VOICEVOX engine, and integrates with Anki via AnkiConnect to aid vocabulary card mining.
+
 ## Getting Started
 
 First, run the development server:
