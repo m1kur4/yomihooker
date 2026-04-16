@@ -1,0 +1,19 @@
+[lunatranslator]
+port = 2333
+
+[voicevox]
+port = 50021
+speaker = "14"
+
+[anki_connect]
+port = 8765
+
+[defaults.lunatranslator]
+port = 2333
+
+[defaults.voicevox]
+port = 50021
+speaker = "14"
+
+[defaults.anki_connect]
+port = 8765

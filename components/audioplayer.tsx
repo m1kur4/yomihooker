@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { audioFilename, fetchTtsBlob, saveToDesktop } from "@/lib/media-utils";
+import { useSettings } from "@/lib/settings-context";
 
 const DEFAULT_TEXT = "";
+const FOLATING_DURATION = 200; // ms
 
 type AudioPlayerProps = {
   text?: string;
@@ -25,6 +27,7 @@ export function AudioPlayer({
   const objectUrlRef = useRef<string | null>(null);
   const lastTextRef = useRef<string>("");
 
+  const { settings } = useSettings();
   const [text, setText] = useState(initialText);
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -96,7 +99,10 @@ export function AudioPlayer({
     setError(null);
 
     try {
-      const audioBlob = await fetchTtsBlob(trimmedText);
+      const audioBlob = await fetchTtsBlob(trimmedText, {
+        voicevoxPort: settings.voicevoxPort,
+        speaker: settings.voicevoxSpeaker,
+      });
 
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current);
@@ -156,7 +162,10 @@ export function AudioPlayer({
 
     setIsDownloading(true);
     try {
-      const audioBlob = await fetchTtsBlob(trimmedText);
+      const audioBlob = await fetchTtsBlob(trimmedText, {
+        voicevoxPort: settings.voicevoxPort,
+        speaker: settings.voicevoxSpeaker,
+      });
       const audioUrl = URL.createObjectURL(audioBlob);
       objectUrlRef.current = audioUrl;
       lastTextRef.current = trimmedText;
@@ -182,7 +191,7 @@ export function AudioPlayer({
   };
 
   const closePanel = () => {
-    hideTimeoutRef.current = setTimeout(() => setIsPanelOpen(false), 100);
+    hideTimeoutRef.current = setTimeout(() => setIsPanelOpen(false), FOLATING_DURATION);
   };
 
   // Shared controls panel content (progress + volume + download)

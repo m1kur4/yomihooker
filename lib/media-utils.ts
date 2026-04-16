@@ -2,14 +2,17 @@
  * Fetch TTS audio from the local VOICEVOX proxy and return the WAV blob.
  * Throws on network or server errors.
  */
-export async function fetchTtsBlob(text: string): Promise<Blob> {
+export async function fetchTtsBlob(
+  text: string,
+  overrides?: { voicevoxPort?: number; speaker?: string },
+): Promise<Blob> {
   const trimmed = text.trim();
   if (!trimmed) throw new Error("Text is empty");
 
   const res = await fetch("/api/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: trimmed }),
+    body: JSON.stringify({ text: trimmed, ...overrides }),
   });
 
   if (!res.ok) {

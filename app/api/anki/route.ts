@@ -1,8 +1,6 @@
 export const runtime = "nodejs";
 
-import { config } from "@/lib/config";
-
-const ANKI_URL = config.ankiConnect.url;
+import { readConfigFile } from "@/lib/read-config";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -12,8 +10,13 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  const cfg = readConfigFile();
+  const ankiPort =
+    request.headers.get("X-Anki-Port") ?? String(cfg.anki_connect.port);
+  const ankiUrl = `http://127.0.0.1:${ankiPort}`;
+
   try {
-    const response = await fetch(ANKI_URL, {
+    const response = await fetch(ankiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BookmarkPlus, LoaderCircle } from "lucide-react";
 
 import { ankiRequest } from "@/lib/anki-connect";
+import { useSettings } from "@/lib/settings-context";
 import { audioFilename, captureScreenshotAsBlob, fetchTtsBlob, screenshotFilename } from "@/lib/media-utils";
 import type { MessageData } from "@/lib/message-data";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ type NoteInfo = {
 };
 
 export function MineButton({ data }: { data: MessageData }) {
+  const { settings } = useSettings();
   const [isMining, setIsMining] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mineKey, setMineKey] = useState(0);
@@ -47,16 +49,20 @@ export function MineButton({ data }: { data: MessageData }) {
     const audioPromise = (async () => {
       const trimmed = data.original.trim();
       if (!trimmed) return null;
-      return fetchTtsBlob(trimmed);
+      return fetchTtsBlob(trimmed, {
+        voicevoxPort: settings.voicevoxPort,
+        speaker: settings.voicevoxSpeaker,
+      });
     })().catch(() => null);
 
     // Fetch latest Anki note
     const notePromise = (async () => {
-      const findResult = await ankiRequest("findNotes", { query: "added:1" });
+      const ankiOverride = { ankiPort: settings.ankiPort };
+      const findResult = await ankiRequest("findNotes", { query: "added:1" }, ankiOverride);
       const ids = findResult.result as number[] | null;
       if (!ids || ids.length === 0) throw new Error("No recent Anki notes found.");
       const noteId = Math.max(...ids);
-      const infoResult = await ankiRequest("notesInfo", { notes: [noteId] });
+      const infoResult = await ankiRequest("notesInfo", { notes: [noteId] }, ankiOverride);
       const notes = infoResult.result as NoteInfo[] | null;
       if (!notes || notes.length === 0) throw new Error("Could not fetch note info.");
       return { noteId, note: notes[0] };

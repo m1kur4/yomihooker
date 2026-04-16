@@ -1,12 +1,11 @@
 export const runtime = "nodejs";
 
-import { config } from "@/lib/config";
-
-const ENGINE_URL = config.voicevox.url;
-const SPEAKER = config.voicevox.speaker;
+import { readConfigFile } from "@/lib/read-config";
 
 type TtsRequest = {
   text?: string;
+  voicevoxPort?: number;
+  speaker?: string;
 };
 
 export async function POST(request: Request) {
@@ -17,9 +16,14 @@ export async function POST(request: Request) {
     return Response.json({ error: "Text is required" }, { status: 400 });
   }
 
+  const cfg = readConfigFile();
+  const port = payload?.voicevoxPort ?? cfg.voicevox.port;
+  const speaker = payload?.speaker ?? cfg.voicevox.speaker;
+  const engineUrl = `http://127.0.0.1:${port}`;
+
   try {
-    const queryUrl = new URL("/audio_query", ENGINE_URL);
-    queryUrl.searchParams.set("speaker", SPEAKER);
+    const queryUrl = new URL("/audio_query", engineUrl);
+    queryUrl.searchParams.set("speaker", speaker);
     queryUrl.searchParams.set("text", text);
 
     const queryResponse = await fetch(queryUrl, {
@@ -33,8 +37,8 @@ export async function POST(request: Request) {
 
     const queryJson = await queryResponse.json();
 
-    const synthesisUrl = new URL("/synthesis", ENGINE_URL);
-    synthesisUrl.searchParams.set("speaker", SPEAKER);
+    const synthesisUrl = new URL("/synthesis", engineUrl);
+    synthesisUrl.searchParams.set("speaker", speaker);
 
     const synthesisResponse = await fetch(synthesisUrl, {
       method: "POST",

@@ -5,6 +5,7 @@ import { useForm, type ControllerRenderProps } from "react-hook-form";
 import { Upload, X } from "lucide-react";
 
 import { ankiRequest, storeMediaFileFromBlob } from "@/lib/anki-connect";
+import { useSettings } from "@/lib/settings-context";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -139,6 +140,7 @@ export function NoteCardForm({
   onSuccess,
   extraActions,
 }: NoteCardFormProps) {
+  const { settings } = useSettings();
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updateSuccess, setUpdateSuccess] = useState(false);
 
@@ -181,7 +183,7 @@ export function NoteCardForm({
       const pending = pendingBlobMap[key];
       if (pending) {
         try {
-          await storeMediaFileFromBlob(pending.blob, pending.filename);
+          await storeMediaFileFromBlob(pending.blob, pending.filename, { ankiPort: settings.ankiPort });
         } catch (e) {
           setUpdateError(e instanceof Error ? e.message : `Failed to upload ${key}`);
           return;
@@ -197,9 +199,11 @@ export function NoteCardForm({
     );
 
     try {
-      const result = await ankiRequest("updateNoteFields", {
-        note: { id: noteId, fields },
-      });
+      const result = await ankiRequest(
+        "updateNoteFields",
+        { note: { id: noteId, fields } },
+        { ankiPort: settings.ankiPort },
+      );
 
       if (result.error) {
         setUpdateError(String(result.error));

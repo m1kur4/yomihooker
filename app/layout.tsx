@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { ThemeSync } from "./theme-sync";
 import { Navbar } from "@/components/navbar";
+import { DeckStatsProvider } from "@/lib/deck-stats-context";
+import { SettingsProvider } from "@/lib/settings-context";
+import { readConfigFile, configFileToSettings, configFileToDefaults } from "@/lib/read-config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,6 +28,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cfg = readConfigFile();
+  const initialSettings = configFileToSettings(cfg);
+  const defaultSettings = configFileToDefaults(cfg);
+
   return (
     <html
       lang="en"
@@ -35,9 +42,13 @@ export default function RootLayout({
         <Script id="theme-init" strategy="beforeInteractive">
           {`document.documentElement.classList.toggle("dark", window.matchMedia("(prefers-color-scheme: dark)").matches);`}
         </Script>
-        <ThemeSync />
-        <Navbar />
-        <div className="pt-14">{children}</div>
+        <SettingsProvider initialSettings={initialSettings} defaultSettings={defaultSettings}>
+          <DeckStatsProvider>
+            <ThemeSync />
+            <Navbar />
+            <div className="pt-14">{children}</div>
+          </DeckStatsProvider>
+        </SettingsProvider>
       </body>
     </html>
   );

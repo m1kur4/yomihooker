@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     "@prisma/adapter-libsql",
     "@libsql/client",
     "prisma",
+    "smol-toml",
   ],
 };
 

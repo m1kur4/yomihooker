@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { ankiRequest } from "@/lib/anki-connect";
+import { useSettings } from "@/lib/settings-context";
 import { NoteCardForm, extractFilename, type NoteFields } from "@/components/note-card-form";
 
 type NoteInfo = {
@@ -11,6 +12,7 @@ type NoteInfo = {
 };
 
 export function NoteCard() {
+  const { settings } = useSettings();
   const [loading, setLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [noteState, setNoteState] = useState<{
@@ -24,7 +26,8 @@ export function NoteCard() {
         setLoading(true);
         setStatusMessage(null);
 
-        const findResult = await ankiRequest("findNotes", { query: "added:1" });
+        const ankiOverride = { ankiPort: settings.ankiPort };
+        const findResult = await ankiRequest("findNotes", { query: "added:1" }, ankiOverride);
         const ids = findResult.result as number[] | null;
 
         if (!ids || ids.length === 0) {
@@ -34,7 +37,7 @@ export function NoteCard() {
 
         const latestId = Math.max(...ids);
 
-        const infoResult = await ankiRequest("notesInfo", { notes: [latestId] });
+        const infoResult = await ankiRequest("notesInfo", { notes: [latestId] }, ankiOverride);
         const notes = infoResult.result as NoteInfo[] | null;
 
         if (!notes || notes.length === 0) {
@@ -62,7 +65,7 @@ export function NoteCard() {
     }
 
     void fetchLatestNote();
-  }, []);
+  }, [settings.ankiPort]);
 
   if (loading) {
     return (

@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BarChart2, Settings } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -10,13 +12,117 @@ import {
 } from "@/components/ui/navigation-menu";
 import { AudioPlayer } from "@/components/audioplayer";
 import { Screenshot } from "@/components/screenshot";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useDeckStats } from "@/lib/deck-stats-context";
+import { useSettings, type AppSettings } from "@/lib/settings-context";
 import { cn } from "@/lib/utils";
 
 const APP_NAME = "TextHooker";
-const NAV_ITEMS = [
-  { label: "Home", href: "/" },
-  { label: "Anki", href: "/anki" },
-];
+const NAV_ITEMS = [{ label: "Anki", href: "/anki" }];
+
+function SettingsPopover() {
+  const { settings, defaultSettings, setSettings } = useSettings();
+  const [draft, setDraft] = useState<AppSettings>(settings);
+  const [open, setOpen] = useState(false);
+
+  const handleOpen = (v: boolean) => {
+    if (v) setDraft(settings);
+    setOpen(v);
+  };
+
+  const handleSave = async () => {
+    await setSettings(draft);
+    setOpen(false);
+  };
+
+  const handleReset = () => {
+    setDraft(defaultSettings);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={handleOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label="Settings">
+          <Settings />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72" align="end">
+        <p className="mb-3 text-sm font-semibold">Settings</p>
+        <div className="space-y-3 text-sm">
+          <div className="space-y-1">
+            <label className="text-muted-foreground">LunaTranslator port</label>
+            <Input
+              type="number"
+              value={draft.lunatranslatorPort}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, lunatranslatorPort: Number(e.target.value) }))
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-muted-foreground">VOICEVOX port</label>
+            <Input
+              type="number"
+              value={draft.voicevoxPort}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, voicevoxPort: Number(e.target.value) }))
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-muted-foreground">VOICEVOX speaker</label>
+            <Input
+              type="number"
+              value={draft.voicevoxSpeaker}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, voicevoxSpeaker: e.target.value }))
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-muted-foreground">AnkiConnect port</label>
+            <Input
+              type="number"
+              value={draft.ankiPort}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, ankiPort: Number(e.target.value) }))
+              }
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex justify-between">
+          <Button variant="ghost" size="sm" onClick={handleReset}>
+            Reset defaults
+          </Button>
+          <Button size="sm" onClick={() => void handleSave()}>
+            Save
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function StatsButton() {
+  const { charCount } = useDeckStats();
+  return (
+    <HoverCard>
+      <HoverCardTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label="Reading stats">
+          <BarChart2 />
+        </Button>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-52 text-sm">
+        You&apos;ve read{" "}
+        <span className="font-semibold">{charCount.toLocaleString()}</span>{" "}
+        characters
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
 
 export function Navbar() {
   const pathname = usePathname();
@@ -24,9 +130,12 @@ export function Navbar() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center px-4 gap-6">
-        <span className="text-xl font-extrabold tracking-tight text-green-500">
+        <Link
+          href="/"
+          className="text-xl font-extrabold tracking-tight text-green-500"
+        >
           {APP_NAME}
-        </span>
+        </Link>
         <NavigationMenu viewport={false}>
           <NavigationMenuList className="gap-0">
             {NAV_ITEMS.map(({ label, href }) => (
@@ -37,7 +146,7 @@ export function Navbar() {
                   className={cn(
                     "inline-flex items-center px-3 py-1.5 text-xl font-semibold tracking-tight transition-colors rounded-md",
                     "text-foreground/55 hover:text-foreground hover:bg-transparent",
-                    "data-[active]:text-foreground"
+                    "data-active:text-foreground",
                   )}
                 >
                   <Link href={href}>{label}</Link>
@@ -49,6 +158,8 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-2">
           <AudioPlayer />
           <Screenshot />
+          <StatsButton />
+          <SettingsPopover />
         </div>
       </div>
     </header>

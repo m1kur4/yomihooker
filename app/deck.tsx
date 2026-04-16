@@ -12,11 +12,19 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { config } from "@/lib/config";
 import type { MessageData } from "@/lib/message-data";
+import { useDeckStats } from "@/lib/deck-stats-context";
+import { useSettings, lunaWsUrl, lunaTranslateUrl } from "@/lib/settings-context";
 
 const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({ deckId, deckName }) => {
   const [messages, setMessages] = useState<MessageData[]>([]);
+  const { setCharCount } = useDeckStats();
+  const { settings } = useSettings();
+
+  useEffect(() => {
+    const total = messages.reduce((sum, m) => sum + m.original.length, 0);
+    setCharCount(total);
+  }, [messages, setCharCount]);
 
   const deleteMessage = async (messageId: number) => {
     const response = await fetch(`/api/decks/${deckId}/messages/${messageId}`, {
@@ -60,7 +68,7 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({ deckId, deck
         return;
       }
 
-      wsOriginal = new WebSocket(config.lunatranslator.wsUrl);
+      wsOriginal = new WebSocket(lunaWsUrl(settings.lunatranslatorPort));
 
       wsOriginal.onmessage = async (event: MessageEvent<string>) => {
         const originalText = event.data;
@@ -69,7 +77,7 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({ deckId, deck
 
         try {
           const response = await fetch(
-            `${config.lunatranslator.translateUrl}?text=${encodeURIComponent(originalText)}`,
+            `${lunaTranslateUrl(settings.lunatranslatorPort)}?text=${encodeURIComponent(originalText)}`,
           );
 
           if (!response.ok) {
@@ -126,7 +134,7 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({ deckId, deck
       isCancelled = true;
       wsOriginal?.close();
     };
-  }, [deckId]);
+  }, [deckId, settings.lunatranslatorPort]);
 
   const reversed = [...messages].reverse();
   const visible = reversed.slice(0, 10);
