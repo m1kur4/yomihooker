@@ -1,0 +1,64 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="32" y1="24" x2="224" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#182338"/>
+      <stop offset="1" stop-color="#0B1220"/>
+    </linearGradient>
+
+    <linearGradient id="bubble" x1="64" y1="56" x2="188" y2="184" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FBFF"/>
+      <stop offset="1" stop-color="#DDEBFF"/>
+    </linearGradient>
+
+    <linearGradient id="accent" x1="150" y1="86" x2="214" y2="170" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5EEAD4"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+
+    <filter id="shadow" x="0" y="0" width="256" height="256" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <!-- App tile -->
+  <rect x="16" y="16" width="224" height="224" rx="52" fill="url(#bg)"/>
+
+  <!-- Speech bubble -->
+  <g filter="url(#shadow)">
+    <path
+      d="M70 64C70 53.5066 78.5066 45 89 45H167C177.493 45 186 53.5066 186 64V133C186 143.493 177.493 152 167 152H122L95 177C91.246 180.475 85.2 177.812 85.2 172.7V152H89C78.5066 152 70 143.493 70 133V64Z"
+      fill="url(#bubble)"
+    />
+  </g>
+
+  <!-- Subtle hook -->
+  <path
+    d="M174 83C191 83 203 95 203 111C203 128 190 141 172 141H146"
+    stroke="url(#accent)"
+    stroke-width="12"
+    stroke-linecap="round"
+  />
+  <path
+    d="M146 141L162 125"
+    stroke="url(#accent)"
+    stroke-width="12"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Japanese character feel -->
+  <text
+    x="128"
+    y="124"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    font-size="72"
+    font-weight="700"
+    fill="#162033"
+    font-family="'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif"
+  >あ</text>
+
+  <!-- Small tech accent -->
+  <circle cx="184" cy="185" r="10" fill="#22D3EE" fill-opacity="0.9"/>
+  <circle cx="184" cy="185" r="4" fill="#E6FFFB"/>
+</svg>
