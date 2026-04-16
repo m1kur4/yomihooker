@@ -252,7 +252,7 @@ const MessageCard: React.FC<{
         </div>
 
         <div style={styles.actions}>
-          <AudioPlayer text={data.original} compact filename={data.timestamp} />
+          <AudioPlayer text={data.original} compact />
 
           <Button
             variant="destructive"

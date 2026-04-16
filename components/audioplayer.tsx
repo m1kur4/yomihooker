@@ -1,12 +1,17 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Download, LoaderCircle, Pause, Play, Volume2 } from 'lucide-react'
+import { Download, LoaderCircle, Pause, Play, Volume2, Music } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { Progress } from '@/components/ui/progress'
 import { Slider } from '@/components/ui/slider'
-import { audioFilename, fetchTtsBlob, saveToDesktop } from '@/lib/media-utils'
+import { fetchTtsBlob, formatFilename, saveToDesktop } from '@/lib/media-utils'
 import { useSettings } from '@/lib/settings-context'
 
 const DEFAULT_TEXT = ''
@@ -15,13 +20,11 @@ const FOLATING_DURATION = 200 // ms
 type AudioPlayerProps = {
   text?: string
   compact?: boolean
-  filename?: string
 }
 
 export function AudioPlayer({
   text: initialText = DEFAULT_TEXT,
   compact = false,
-  filename,
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const objectUrlRef = useRef<string | null>(null)
@@ -37,6 +40,7 @@ export function AudioPlayer({
   const [volume, setVolume] = useState(1)
   const [isDownloading, setIsDownloading] = useState(false)
   const [isPanelOpen, setIsPanelOpen] = useState(false)
+  const [popoverOpen, setPopoverOpen] = useState(false)
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -148,7 +152,8 @@ export function AudioPlayer({
   const handleDownload = async () => {
     if (isDownloading) return
 
-    const wavName = audioFilename(filename)
+    const ts = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Shanghai' })
+    const wavName = `audio_${formatFilename(ts)}.wav`
 
     // If audio already fetched, save directly
     if (objectUrlRef.current) {
@@ -199,7 +204,7 @@ export function AudioPlayer({
 
   // Shared controls panel content (progress + volume + download)
   const controlsPanel = (
-    <div className="flex items-center gap-1.5 pl-2.5">
+    <div className="flex min-w-0 flex-1 items-center gap-1.5">
       {/* Progress slider */}
       <Slider
         aria-label="Audio progress"
@@ -304,26 +309,21 @@ export function AudioPlayer({
     )
   }
 
-  // Non-compact (navbar): button + hover panel that drops down, with text input inside
+  // Non-compact (navbar): Popover triggered by Music icon button
   return (
-    <div
-      className="relative flex items-center"
-      onMouseEnter={openPanel}
-      onMouseLeave={closePanel}
-      onFocus={openPanel}
-      onBlur={closePanel}
-    >
-      {/* Floating panel — drops below the button */}
-      <div
-        className={[
-          'border-border/60 bg-card/98 absolute top-full right-0 z-10 mt-3 w-72 rounded-xl border px-2.5 py-2 shadow-xl backdrop-blur-md transition-all duration-200',
-          isPanelOpen
-            ? 'pointer-events-auto translate-y-0 opacity-100'
-            : 'pointer-events-none -translate-y-1.5 opacity-0',
-        ].join(' ')}
-        onMouseEnter={openPanel}
-        onMouseLeave={closePanel}
-      >
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label="Audio player"
+          title="Audio player"
+        >
+          <Music />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 px-2.5 py-2" align="end">
         {/* Text input */}
         <input
           type="text"
@@ -332,31 +332,30 @@ export function AudioPlayer({
           placeholder="Type Japanese text"
           className="border-input bg-background placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 mb-2 w-full rounded-lg border px-2.5 py-1.5 text-sm transition-colors outline-none focus-visible:ring-2"
         />
-        {controlsPanel}
+        {/* Controls row: play button + progress + volume + download */}
+        <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => void handlePlay()}
+            disabled={!text.trim() || isLoading}
+            className="shrink-0"
+            aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
+            title={error ?? (isPlaying ? 'Pause audio' : 'Play audio')}
+          >
+            {isLoading ? (
+              <LoaderCircle className="size-3 animate-spin" />
+            ) : isPlaying ? (
+              <Pause className="size-3" />
+            ) : (
+              <Play className="size-3" />
+            )}
+          </Button>
+          {controlsPanel}
+        </div>
         {error && <p className="text-destructive mt-1.5 text-xs">{error}</p>}
-        {/* Caret pointing up */}
-        <div className="border-border/60 bg-card/98 absolute -top-1.5 right-2.5 size-3 rotate-45 border-t border-l" />
-        {/* Invisible bridge covering the mt-3 gap so hover stays active */}
-        <div className="absolute -top-3 right-0 left-0 h-3" />
-      </div>
-
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        onClick={() => void handlePlay()}
-        disabled={!text.trim() || isLoading}
-        aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
-        title={error ?? (isPlaying ? 'Pause audio' : 'Play audio')}
-      >
-        {isLoading ? (
-          <LoaderCircle className="animate-spin" />
-        ) : isPlaying ? (
-          <Pause />
-        ) : (
-          <Play />
-        )}
-      </Button>
-    </div>
+      </PopoverContent>
+    </Popover>
   )
 }
