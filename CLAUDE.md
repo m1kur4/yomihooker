@@ -57,7 +57,7 @@ API routes (`/api/tts`, `/api/anki`) call `readConfigFile()` for their fallback 
 - **File**: `data/data.db` (gitignored)
 - **Schema**: `prisma/schema.prisma` — `Deck` and `Message` models
 - **Config**: `prisma/config.ts` — uses `defineConfig` (Prisma 7); `datasource.url` points to `../data/data.db`
-- **Migrations**: `prisma/migrations/` — committed to git; apply with `npx prisma migrate deploy --config ./prisma/config.ts`
+- **Schema sync**: no migrations — use `npx prisma db push --config ./prisma/config.ts` after any schema change
 - **Seed**: `npx prisma db seed --config ./prisma/config.ts` — reads legacy `data/decks.json` + `data/decks/{id}/messages.json`
 - **Connection**: `lib/prisma.ts` — singleton `PrismaClient` with `PrismaLibSql({ url })` adapter; URL from `DATABASE_URL` env var
 

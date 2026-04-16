@@ -93,11 +93,11 @@ export function MineButton({ data }: { data: MessageData }) {
       const { fields } = note
 
       // Append translation as new line in SentenceFurigana, but only if not already present
-      const existingFurigana = fields['SentenceFurigana']?.value ?? ''
-      const newFurigana = existingFurigana.includes(data.translation)
-        ? existingFurigana
-        : existingFurigana
-          ? `${existingFurigana}\n<br>${data.translation}`
+      const existingSentence = fields['Sentence']?.value ?? ''
+      const newSentence = existingSentence.includes(data.translation)
+        ? existingSentence
+        : existingSentence
+          ? `${existingSentence}\n<br>${data.translation}`
           : data.translation
 
       setNoteState({
@@ -105,7 +105,7 @@ export function MineButton({ data }: { data: MessageData }) {
         defaultValues: {
           Expression: fields['Expression']?.value ?? '',
           Sentence: fields['Sentence']?.value ?? '',
-          SentenceFurigana: newFurigana,
+          SentenceFurigana: newSentence,
           SentenceAudio: audio
             ? audioFilename(data.timestamp)
             : extractFilename(fields['SentenceAudio']?.value ?? ''),
