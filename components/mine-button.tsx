@@ -117,7 +117,7 @@ export function MineButton({ data }: { data: MessageData }) {
       </Button>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] w-full max-w-xl overflow-y-auto">
+        <DialogContent className="max-h-[90vh] w-full max-w-xl overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Update Anki Note</DialogTitle>
           </DialogHeader>

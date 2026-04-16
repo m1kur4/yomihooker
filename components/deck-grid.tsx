@@ -177,7 +177,7 @@ function AddDeckButton({ onCreate }: { onCreate: (deck: Deck) => void }) {
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Create Deck</DialogTitle>
           </DialogHeader>
@@ -241,7 +241,7 @@ function RenameDialog({
 
   return (
     <Dialog open={deckId !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Rename Deck</DialogTitle>
         </DialogHeader>

@@ -27,10 +27,9 @@ export async function POST(
     return Response.json({ error: "Invalid deck id" }, { status: 400 });
   }
 
-  const payload = (await request.json()) as Partial<MessageData>;
+  const payload = (await request.json()) as Partial<Omit<MessageData, "id">>;
 
   if (
-    typeof payload.id !== "number" ||
     typeof payload.original !== "string" ||
     typeof payload.translation !== "string" ||
     typeof payload.timestamp !== "string"
@@ -39,7 +38,6 @@ export async function POST(
   }
 
   const message = await appendMessage(deckId, {
-    id: payload.id,
     original: payload.original,
     translation: payload.translation,
     timestamp: payload.timestamp,

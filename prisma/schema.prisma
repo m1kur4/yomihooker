@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Deck {
+  id        Int       @id @default(autoincrement())
+  name      String
+  cover     String?
+  createdAt DateTime  @default(now())
+  messages  Message[]
+}
+
+model Message {
+  id          Int    @id @default(autoincrement())
+  original    String
+  translation String
+  timestamp   String
+  deckId      Int
+  deck        Deck   @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@index([deckId])
+}

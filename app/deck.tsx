@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Languages, Trash2 } from "lucide-react";
 
 import { AudioPlayer } from "@/components/audioplayer";
@@ -18,7 +18,6 @@ import type { MessageData } from "@/lib/message-data";
 const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({ deckId, deckName }) => {
   const [messages, setMessages] = useState<MessageData[]>([]);
 
-  const messageIdCounter = useRef<number>(0);
   const deleteMessage = async (messageId: number) => {
     const response = await fetch(`/api/decks/${deckId}/messages/${messageId}`, {
       method: "DELETE",
@@ -53,11 +52,6 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({ deckId, deck
         }
 
         setMessages(persistedMessages);
-        messageIdCounter.current =
-          persistedMessages.reduce(
-            (maxId, message) => Math.max(maxId, message.id),
-            -1,
-          ) + 1;
       } catch (error) {
         console.error("Messages fetch failed:", error);
       }
@@ -88,8 +82,7 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({ deckId, deck
           console.error("Translation fetch failed:", error);
         }
 
-        const newMessage: MessageData = {
-          id: messageIdCounter.current++,
+        const payload = {
           original: originalText,
           translation,
           timestamp: new Date().toLocaleString("en-GB", {
@@ -97,18 +90,20 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({ deckId, deck
           }),
         };
 
+        let created: MessageData;
         try {
           const response = await fetch(`/api/decks/${deckId}/messages`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(newMessage),
+            body: JSON.stringify(payload),
           });
 
           if (!response.ok) {
             throw new Error(`Persist request failed: ${response.status}`);
           }
+          created = (await response.json()) as MessageData;
         } catch (error) {
           console.error("Message persistence failed:", error);
           return;
@@ -118,7 +113,7 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({ deckId, deck
           return;
         }
 
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
+        setMessages((prevMessages) => [...prevMessages, created]);
       };
 
       wsOriginal.onerror = (error) =>

@@ -1,7 +1,10 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-#custom 
+#custom
 /data
+/data/data.db
+/data/data.db-shm
+/data/data.db-wal
 
 # dependencies
 /node_modules

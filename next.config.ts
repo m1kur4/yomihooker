@@ -1,11 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  allowedDevOrigins: ["127.0.0.1"],
+  serverExternalPackages: [
+    "@prisma/client",
+    "@prisma/adapter-libsql",
+    "@libsql/client",
+    "prisma",
+  ],
 };
-
-module.exports = {
-  allowedDevOrigins: ['127.0.0.1'],
-}
 
 export default nextConfig;
