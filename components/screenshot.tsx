@@ -1,29 +1,33 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { Camera, LoaderCircle } from "lucide-react";
+import { useState } from 'react'
+import { Camera, LoaderCircle } from 'lucide-react'
 
-import { Button } from "@/components/ui/button";
-import { captureScreenshotAsBlob, saveToDesktop, screenshotFilename } from "@/lib/media-utils";
+import { Button } from '@/components/ui/button'
+import {
+  captureScreenshotAsBlob,
+  saveToDesktop,
+  screenshotFilename,
+} from '@/lib/media-utils'
 
 export function Screenshot() {
-  const [isCapturing, setIsCapturing] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false)
 
   const handleScreenshot = async () => {
-    if (isCapturing) return;
-    setIsCapturing(true);
+    if (isCapturing) return
+    setIsCapturing(true)
 
     try {
-      const blob = await captureScreenshotAsBlob();
-      await saveToDesktop(blob, screenshotFilename());
+      const blob = await captureScreenshotAsBlob()
+      await saveToDesktop(blob, screenshotFilename())
     } catch (error) {
-      if (error instanceof Error && error.name !== "NotAllowedError") {
-        console.error("Screenshot failed:", error);
+      if (error instanceof Error && error.name !== 'NotAllowedError') {
+        console.error('Screenshot failed:', error)
       }
     } finally {
-      setIsCapturing(false);
+      setIsCapturing(false)
     }
-  };
+  }
 
   return (
     <Button
@@ -35,11 +39,7 @@ export function Screenshot() {
       aria-label="Take screenshot"
       title="Capture a window and save to desktop"
     >
-      {isCapturing ? (
-        <LoaderCircle className="animate-spin" />
-      ) : (
-        <Camera />
-      )}
+      {isCapturing ? <LoaderCircle className="animate-spin" /> : <Camera />}
     </Button>
-  );
+  )
 }

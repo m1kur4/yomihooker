@@ -1,7 +1,7 @@
-import { notFound } from "next/navigation";
-import Link from "next/link";
+import { notFound } from 'next/navigation'
+import Link from 'next/link'
 
-import TextDeck from "@/app/deck";
+import TextDeck from '@/app/deck'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,21 +9,21 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { readDecks } from "@/lib/deck-store";
+} from '@/components/ui/breadcrumb'
+import { readDecks } from '@/lib/deck-store'
 
 export default async function DeckPage({
   params,
 }: {
-  params: Promise<{ deckId: string }>;
+  params: Promise<{ deckId: string }>
 }) {
-  const { deckId } = await params;
-  const id = Number(deckId);
-  if (Number.isNaN(id)) notFound();
+  const { deckId } = await params
+  const id = Number(deckId)
+  if (Number.isNaN(id)) notFound()
 
-  const decks = await readDecks();
-  const deck = decks.find((d) => d.id === id);
-  if (!deck) notFound();
+  const decks = await readDecks()
+  const deck = decks.find((d) => d.id === id)
+  if (!deck) notFound()
 
   return (
     <main className="flex min-h-screen flex-col px-4 py-4">
@@ -43,5 +43,5 @@ export default async function DeckPage({
 
       <TextDeck deckId={id} deckName={deck.name} />
     </main>
-  );
+  )
 }

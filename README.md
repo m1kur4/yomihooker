@@ -19,11 +19,11 @@ A Japanese reading tool that hooks into a local text-hook server, displays captu
 
 The following services must be running locally before starting Yomihooker:
 
-| Service | Default port | Purpose |
-|---|---|---|
-| [LunaTranslator](https://github.com/HIllya51/LunaTranslator) | 2333 | WebSocket text hook + machine translation |
-| [VOICEVOX](https://voicevox.hiroshiba.jp/) | 50021 | Japanese TTS synthesis |
-| [AnkiConnect](https://foosoft.net/projects/anki-connect/) | 8765 | Anki note read/write |
+| Service                                                      | Default port | Purpose                                   |
+| ------------------------------------------------------------ | ------------ | ----------------------------------------- |
+| [LunaTranslator](https://github.com/HIllya51/LunaTranslator) | 2333         | WebSocket text hook + machine translation |
+| [VOICEVOX](https://voicevox.hiroshiba.jp/)                   | 50021        | Japanese TTS synthesis                    |
+| [AnkiConnect](https://foosoft.net/projects/anki-connect/)    | 8765         | Anki note read/write                      |
 
 Ports can be changed in the in-app settings (gear icon in the navbar) or directly in `config.toml`.
 

@@ -1,43 +1,43 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { useEffect, useState } from 'react'
+import { Check, Copy } from 'lucide-react'
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button'
 
 type ClipboardProps = {
-  text: string;
-  label?: string;
-};
+  text: string
+  label?: string
+}
 
 export function Clipboard({
   text,
-  label = "Copy translation",
+  label = 'Copy translation',
 }: ClipboardProps) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!copied) {
-      return;
+      return
     }
 
-    const timeoutId = window.setTimeout(() => setCopied(false), 1500);
+    const timeoutId = window.setTimeout(() => setCopied(false), 1500)
 
-    return () => window.clearTimeout(timeoutId);
-  }, [copied]);
+    return () => window.clearTimeout(timeoutId)
+  }, [copied])
 
   const handleCopy = async () => {
     if (!text) {
-      return;
+      return
     }
 
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
     } catch (error) {
-      console.error("Clipboard copy failed:", error);
+      console.error('Clipboard copy failed:', error)
     }
-  };
+  }
 
   return (
     <Button
@@ -51,5 +51,5 @@ export function Clipboard({
     >
       {copied ? <Check /> : <Copy />}
     </Button>
-  );
+  )
 }

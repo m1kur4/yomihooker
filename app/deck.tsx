@@ -1,199 +1,207 @@
-"use client";
+'use client'
 
-import React, { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, Languages, Trash2 } from "lucide-react";
+import React, { useState, useEffect } from 'react'
+import { ChevronDown, ChevronUp, Languages, Trash2 } from 'lucide-react'
 
-import { AudioPlayer } from "@/components/audioplayer";
-import { Clipboard } from "@/components/clipboard";
-import { MineButton } from "@/components/mine-button";
-import { Button } from "@/components/ui/button";
+import { AudioPlayer } from '@/components/audioplayer'
+import { Clipboard } from '@/components/clipboard'
+import { MineButton } from '@/components/mine-button'
+import { Button } from '@/components/ui/button'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import type { MessageData } from "@/lib/message-data";
-import { useDeckStats } from "@/lib/deck-stats-context";
-import { useSettings, lunaWsUrl, lunaTranslateUrl } from "@/lib/settings-context";
+} from '@/components/ui/collapsible'
+import type { MessageData } from '@/lib/message-data'
+import { useDeckStats } from '@/lib/deck-stats-context'
+import {
+  useSettings,
+  lunaWsUrl,
+  lunaTranslateUrl,
+} from '@/lib/settings-context'
 
-const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({ deckId, deckName }) => {
-  const [messages, setMessages] = useState<MessageData[]>([]);
-  const { setCharCount } = useDeckStats();
-  const { settings } = useSettings();
+const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
+  deckId,
+  deckName,
+}) => {
+  const [messages, setMessages] = useState<MessageData[]>([])
+  const { setCharCount } = useDeckStats()
+  const { settings } = useSettings()
 
   useEffect(() => {
-    const total = messages.reduce((sum, m) => sum + m.original.length, 0);
-    setCharCount(total);
-  }, [messages, setCharCount]);
+    const total = messages.reduce((sum, m) => sum + m.original.length, 0)
+    setCharCount(total)
+  }, [messages, setCharCount])
 
   const deleteMessage = async (messageId: number) => {
     const response = await fetch(`/api/decks/${deckId}/messages/${messageId}`, {
-      method: "DELETE",
-    });
+      method: 'DELETE',
+    })
 
     if (!response.ok) {
-      console.error("Delete request failed:", response.status);
-      return;
+      console.error('Delete request failed:', response.status)
+      return
     }
 
     setMessages((prevMessages) =>
       prevMessages.filter((message) => message.id !== messageId),
-    );
-  };
+    )
+  }
 
   useEffect(() => {
-    let wsOriginal: WebSocket | null = null;
-    let isCancelled = false;
+    let wsOriginal: WebSocket | null = null
+    let isCancelled = false
 
     const syncMessages = async () => {
       try {
-        const response = await fetch(`/api/decks/${deckId}/messages`);
+        const response = await fetch(`/api/decks/${deckId}/messages`)
 
         if (!response.ok) {
-          throw new Error(`Messages request failed: ${response.status}`);
+          throw new Error(`Messages request failed: ${response.status}`)
         }
 
-        const persistedMessages = (await response.json()) as MessageData[];
+        const persistedMessages = (await response.json()) as MessageData[]
 
         if (isCancelled) {
-          return;
+          return
         }
 
-        setMessages(persistedMessages);
+        setMessages(persistedMessages)
       } catch (error) {
-        console.error("Messages fetch failed:", error);
+        console.error('Messages fetch failed:', error)
       }
 
       if (isCancelled) {
-        return;
+        return
       }
 
-      wsOriginal = new WebSocket(lunaWsUrl(settings.lunatranslatorPort));
+      wsOriginal = new WebSocket(lunaWsUrl(settings.lunatranslatorPort))
 
       wsOriginal.onmessage = async (event: MessageEvent<string>) => {
-        const originalText = event.data;
+        const originalText = event.data
 
-        let translation = "";
+        let translation = ''
 
         try {
           const response = await fetch(
             `${lunaTranslateUrl(settings.lunatranslatorPort)}?text=${encodeURIComponent(originalText)}`,
-          );
+          )
 
           if (!response.ok) {
-            throw new Error(`Translation request failed: ${response.status}`);
+            throw new Error(`Translation request failed: ${response.status}`)
           }
 
-          const { result } = (await response.json()) as { result?: string };
-          translation = result ?? "";
+          const { result } = (await response.json()) as { result?: string }
+          translation = result ?? ''
         } catch (error) {
-          console.error("Translation fetch failed:", error);
+          console.error('Translation fetch failed:', error)
         }
 
         const payload = {
           original: originalText,
           translation,
-          timestamp: new Date().toLocaleString("en-GB", {
-            timeZone: "Asia/Shanghai",
+          timestamp: new Date().toLocaleString('en-GB', {
+            timeZone: 'Asia/Shanghai',
           }),
-        };
+        }
 
-        let created: MessageData;
+        let created: MessageData
         try {
           const response = await fetch(`/api/decks/${deckId}/messages`, {
-            method: "POST",
+            method: 'POST',
             headers: {
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),
-          });
+          })
 
           if (!response.ok) {
-            throw new Error(`Persist request failed: ${response.status}`);
+            throw new Error(`Persist request failed: ${response.status}`)
           }
-          created = (await response.json()) as MessageData;
+          created = (await response.json()) as MessageData
         } catch (error) {
-          console.error("Message persistence failed:", error);
-          return;
+          console.error('Message persistence failed:', error)
+          return
         }
 
         if (isCancelled) {
-          return;
+          return
         }
 
-        setMessages((prevMessages) => [...prevMessages, created]);
-      };
+        setMessages((prevMessages) => [...prevMessages, created])
+      }
 
-      wsOriginal.onerror = (error) =>
-        console.error("Original WS Error:", error);
-    };
+      wsOriginal.onerror = (error) => console.error('Original WS Error:', error)
+    }
 
-    void syncMessages();
+    void syncMessages()
 
     return () => {
-      isCancelled = true;
-      wsOriginal?.close();
-    };
-  }, [deckId, settings.lunatranslatorPort]);
+      isCancelled = true
+      wsOriginal?.close()
+    }
+  }, [deckId, settings.lunatranslatorPort])
 
-  const reversed = [...messages].reverse();
-  const visible = reversed.slice(0, 10);
-  const hidden = reversed.slice(10);
-  const [olderOpen, setOlderOpen] = useState(false);
+  const reversed = [...messages].reverse()
+  const visible = reversed.slice(0, 10)
+  const hidden = reversed.slice(10)
+  const [olderOpen, setOlderOpen] = useState(false)
 
   return (
     <div style={styles.container}>
-      <h1 className="mb-10 text-2xl font-bold text-indigo-600 tracking-tight flex justify-center">{deckName}</h1>
+      <h1 className="mb-10 flex justify-center text-2xl font-bold tracking-tight text-indigo-600">
+        {deckName}
+      </h1>
       <Collapsible open={olderOpen} onOpenChange={setOlderOpen}>
-          {visible.map((msg) => (
-            <MessageCard
-              key={msg.id}
-              data={msg}
-              onDelete={() => deleteMessage(msg.id)}
-            />
-          ))}
-          {hidden.length > 0 && (
-            <>
-              <CollapsibleContent>
-                {hidden.map((msg) => (
-                  <MessageCard
-                    key={msg.id}
-                    data={msg}
-                    onDelete={() => deleteMessage(msg.id)}
-                  />
-                ))}
-              </CollapsibleContent>
-              <CollapsibleTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-1.5 text-muted-foreground"
-                >
-                  {olderOpen ? (
-                    <>
-                      <ChevronUp className="size-4" />
-                      Show less
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="size-4" />
-                      {hidden.length} older messages
-                    </>
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-            </>
-          )}
-        </Collapsible>
+        {visible.map((msg) => (
+          <MessageCard
+            key={msg.id}
+            data={msg}
+            onDelete={() => deleteMessage(msg.id)}
+          />
+        ))}
+        {hidden.length > 0 && (
+          <>
+            <CollapsibleContent>
+              {hidden.map((msg) => (
+                <MessageCard
+                  key={msg.id}
+                  data={msg}
+                  onDelete={() => deleteMessage(msg.id)}
+                />
+              ))}
+            </CollapsibleContent>
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-muted-foreground w-full gap-1.5"
+              >
+                {olderOpen ? (
+                  <>
+                    <ChevronUp className="size-4" />
+                    Show less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="size-4" />
+                    {hidden.length} older messages
+                  </>
+                )}
+              </Button>
+            </CollapsibleTrigger>
+          </>
+        )}
+      </Collapsible>
     </div>
-  );
-};
+  )
+}
 
 const MessageCard: React.FC<{
-  data: MessageData;
-  onDelete: () => void;
+  data: MessageData
+  onDelete: () => void
 }> = ({ data, onDelete }) => {
-  const [showTranslation, setShowTranslation] = useState<boolean>(false);
+  const [showTranslation, setShowTranslation] = useState<boolean>(false)
 
   return (
     <div
@@ -203,13 +211,13 @@ const MessageCard: React.FC<{
       <div style={styles.cardHeader}>
         <div
           style={{
-            color: "#666",
-            fontSize: "0.8rem",
+            color: '#666',
+            fontSize: '0.8rem',
           }}
         >
           {data.timestamp}
         </div>
-        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <MineButton data={data} />
           <Clipboard text={data.original} label="Copy original text" />
         </div>
@@ -217,10 +225,10 @@ const MessageCard: React.FC<{
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) auto",
-          gap: "10px 16px",
-          alignItems: "center",
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) auto',
+          gap: '10px 16px',
+          alignItems: 'center',
         }}
       >
         <div style={styles.originalText}>
@@ -229,8 +237,15 @@ const MessageCard: React.FC<{
             variant="outline"
             size="icon-sm"
             onClick={() => setShowTranslation((prev) => !prev)}
-            aria-label={showTranslation ? "Hide translation" : "Show translation"}
-            style={{ display: "inline-flex", marginLeft: "8px", verticalAlign: "middle", opacity: showTranslation ? 1 : 0.5 }}
+            aria-label={
+              showTranslation ? 'Hide translation' : 'Show translation'
+            }
+            style={{
+              display: 'inline-flex',
+              marginLeft: '8px',
+              verticalAlign: 'middle',
+              opacity: showTranslation ? 1 : 0.5,
+            }}
           >
             <Languages />
           </Button>
@@ -251,47 +266,55 @@ const MessageCard: React.FC<{
       </div>
 
       {showTranslation && (
-        <div style={{ ...styles.translationText, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+        <div
+          style={{
+            ...styles.translationText,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: '12px',
+          }}
+        >
           <span>{data.translation}</span>
           <Clipboard text={data.translation} label="Copy translation" />
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    maxWidth: "600px",
-    margin: "0 auto",
-    padding: "20px",
-    fontFamily: "sans-serif",
+    maxWidth: '600px',
+    margin: '0 auto',
+    padding: '20px',
+    fontFamily: 'sans-serif',
   },
   card: {},
   cardHeader: {
-    marginBottom: "10px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "12px",
+    marginBottom: '10px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '12px',
   },
   actions: {
-    display: "flex",
-    gap: "8px",
-    alignItems: "center",
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
   },
   originalText: {
-    fontSize: "18px",
-    fontWeight: "bold",
-    lineHeight: "1.5",
+    fontSize: '18px',
+    fontWeight: 'bold',
+    lineHeight: '1.5',
   },
   translationText: {
-    marginTop: "12px",
-    paddingTop: "12px",
-    borderTop: "1px solid #666",
-    fontSize: "16px",
-    color: "#666",
+    marginTop: '12px',
+    paddingTop: '12px',
+    borderTop: '1px solid #666',
+    fontSize: '16px',
+    color: '#666',
   },
-};
+}
 
-export default TextDeck;
+export default TextDeck

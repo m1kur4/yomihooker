@@ -1,11 +1,11 @@
-import { defineConfig } from "prisma/config";
+import { defineConfig } from 'prisma/config'
 
 export default defineConfig({
-  schema: "./schema.prisma",
+  schema: './schema.prisma',
   migrations: {
-    seed: "tsx prisma/seed.ts",
+    seed: 'tsx prisma/seed.ts',
   },
   datasource: {
-    url: "file:../data/data.db",
+    url: 'file:../data/data.db',
   },
-});
+})

@@ -1,78 +1,92 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react'
 
-import { ankiRequest } from "@/lib/anki-connect";
-import { useSettings } from "@/lib/settings-context";
-import { NoteCardForm, extractFilename, type NoteFields } from "@/components/note-card-form";
+import { ankiRequest } from '@/lib/anki-connect'
+import { useSettings } from '@/lib/settings-context'
+import {
+  NoteCardForm,
+  extractFilename,
+  type NoteFields,
+} from '@/components/note-card-form'
 
 type NoteInfo = {
-  noteId: number;
-  fields: Record<string, { value: string; order: number }>;
-};
+  noteId: number
+  fields: Record<string, { value: string; order: number }>
+}
 
 export function NoteCard() {
-  const { settings } = useSettings();
-  const [loading, setLoading] = useState(true);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const { settings } = useSettings()
+  const [loading, setLoading] = useState(true)
+  const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [noteState, setNoteState] = useState<{
-    noteId: number;
-    defaultValues: NoteFields;
-  } | null>(null);
+    noteId: number
+    defaultValues: NoteFields
+  } | null>(null)
 
   useEffect(() => {
     async function fetchLatestNote() {
       try {
-        setLoading(true);
-        setStatusMessage(null);
+        setLoading(true)
+        setStatusMessage(null)
 
-        const ankiOverride = { ankiPort: settings.ankiPort };
-        const findResult = await ankiRequest("findNotes", { query: "added:1" }, ankiOverride);
-        const ids = findResult.result as number[] | null;
+        const ankiOverride = { ankiPort: settings.ankiPort }
+        const findResult = await ankiRequest(
+          'findNotes',
+          { query: 'added:1' },
+          ankiOverride,
+        )
+        const ids = findResult.result as number[] | null
 
         if (!ids || ids.length === 0) {
-          setStatusMessage("No recently added cards found.");
-          return;
+          setStatusMessage('No recently added cards found.')
+          return
         }
 
-        const latestId = Math.max(...ids);
+        const latestId = Math.max(...ids)
 
-        const infoResult = await ankiRequest("notesInfo", { notes: [latestId] }, ankiOverride);
-        const notes = infoResult.result as NoteInfo[] | null;
+        const infoResult = await ankiRequest(
+          'notesInfo',
+          { notes: [latestId] },
+          ankiOverride,
+        )
+        const notes = infoResult.result as NoteInfo[] | null
 
         if (!notes || notes.length === 0) {
-          setStatusMessage("Could not fetch note info.");
-          return;
+          setStatusMessage('Could not fetch note info.')
+          return
         }
 
-        const { fields } = notes[0];
+        const { fields } = notes[0]
 
         setNoteState({
           noteId: latestId,
           defaultValues: {
-            Expression: fields["Expression"]?.value ?? "",
-            Sentence: fields["Sentence"]?.value ?? "",
-            SentenceFurigana: fields["SentenceFurigana"]?.value ?? "",
-            SentenceAudio: extractFilename(fields["SentenceAudio"]?.value ?? ""),
-            Picture: extractFilename(fields["Picture"]?.value ?? ""),
+            Expression: fields['Expression']?.value ?? '',
+            Sentence: fields['Sentence']?.value ?? '',
+            SentenceFurigana: fields['SentenceFurigana']?.value ?? '',
+            SentenceAudio: extractFilename(
+              fields['SentenceAudio']?.value ?? '',
+            ),
+            Picture: extractFilename(fields['Picture']?.value ?? ''),
           },
-        });
+        })
       } catch {
-        setStatusMessage("Failed to connect to AnkiConnect. Is Anki running?");
+        setStatusMessage('Failed to connect to AnkiConnect. Is Anki running?')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
 
-    void fetchLatestNote();
-  }, [settings.ankiPort]);
+    void fetchLatestNote()
+  }, [settings.ankiPort])
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <p className="text-muted-foreground">Loading…</p>
       </div>
-    );
+    )
   }
 
   if (statusMessage || !noteState) {
@@ -80,14 +94,14 @@ export function NoteCard() {
       <div className="flex items-center justify-center py-12">
         <p className="text-muted-foreground">{statusMessage}</p>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="w-full max-w-xl rounded-xl border border-border bg-card p-6">
+    <div className="border-border bg-card w-full max-w-xl rounded-xl border p-6">
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-semibold">Latest Anki Note</h2>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-muted-foreground text-xs">
           ID: {noteState.noteId}
         </span>
       </div>
@@ -96,5 +110,5 @@ export function NoteCard() {
         defaultValues={noteState.defaultValues}
       />
     </div>
-  );
+  )
 }

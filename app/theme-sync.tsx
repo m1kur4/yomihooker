@@ -1,29 +1,29 @@
-"use client";
+'use client'
 
-import { useEffect } from "react";
+import { useEffect } from 'react'
 
-const mediaQuery = "(prefers-color-scheme: dark)";
+const mediaQuery = '(prefers-color-scheme: dark)'
 
 function applySystemTheme(matchesDark: boolean) {
-  document.documentElement.classList.toggle("dark", matchesDark);
+  document.documentElement.classList.toggle('dark', matchesDark)
 }
 
 export function ThemeSync() {
   useEffect(() => {
-    const media = window.matchMedia(mediaQuery);
+    const media = window.matchMedia(mediaQuery)
 
-    applySystemTheme(media.matches);
+    applySystemTheme(media.matches)
 
     const handleChange = (event: MediaQueryListEvent) => {
-      applySystemTheme(event.matches);
-    };
+      applySystemTheme(event.matches)
+    }
 
-    media.addEventListener("change", handleChange);
+    media.addEventListener('change', handleChange)
 
     return () => {
-      media.removeEventListener("change", handleChange);
-    };
-  }, []);
+      media.removeEventListener('change', handleChange)
+    }
+  }, [])
 
-  return null;
+  return null
 }

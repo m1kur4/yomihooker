@@ -1,31 +1,31 @@
-import { prisma } from "@/lib/prisma";
-import type { MessageData } from "@/lib/message-data";
+import { prisma } from '@/lib/prisma'
+import type { MessageData } from '@/lib/message-data'
 
 function toMessage(row: {
-  id: number;
-  original: string;
-  translation: string;
-  timestamp: string;
+  id: number
+  original: string
+  translation: string
+  timestamp: string
 }): MessageData {
   return {
     id: row.id,
     original: row.original,
     translation: row.translation,
     timestamp: row.timestamp,
-  };
+  }
 }
 
 export async function readMessages(deckId: number): Promise<MessageData[]> {
   const rows = await prisma.message.findMany({
     where: { deckId },
-    orderBy: { id: "asc" },
-  });
-  return rows.map(toMessage);
+    orderBy: { id: 'asc' },
+  })
+  return rows.map(toMessage)
 }
 
 export async function appendMessage(
   deckId: number,
-  message: Omit<MessageData, "id">,
+  message: Omit<MessageData, 'id'>,
 ): Promise<MessageData> {
   const row = await prisma.message.create({
     data: {
@@ -34,8 +34,8 @@ export async function appendMessage(
       timestamp: message.timestamp,
       deckId,
     },
-  });
-  return toMessage(row);
+  })
+  return toMessage(row)
 }
 
 export async function deleteMessageById(
@@ -43,9 +43,9 @@ export async function deleteMessageById(
   messageId: number,
 ): Promise<boolean> {
   try {
-    await prisma.message.delete({ where: { id: messageId, deckId } });
-    return true;
+    await prisma.message.delete({ where: { id: messageId, deckId } })
+    return true
   } catch {
-    return false;
+    return false
   }
 }

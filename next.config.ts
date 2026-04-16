@@ -1,14 +1,14 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["127.0.0.1"],
+  allowedDevOrigins: ['127.0.0.1'],
   serverExternalPackages: [
-    "@prisma/client",
-    "@prisma/adapter-libsql",
-    "@libsql/client",
-    "prisma",
-    "smol-toml",
+    '@prisma/client',
+    '@prisma/adapter-libsql',
+    '@libsql/client',
+    'prisma',
+    'smol-toml',
   ],
-};
+}
 
-export default nextConfig;
+export default nextConfig

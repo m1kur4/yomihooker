@@ -22,11 +22,11 @@ No test suite exists yet.
 
 All ports are configured in `config.toml`.
 
-| Service | Default port | Purpose |
-|---|---|---|
-| LunaTranslator | 2333 | WebSocket text hook + machine translation |
-| VOICEVOX | 50021 | Japanese TTS synthesis |
-| AnkiConnect | 8765 | Anki note read/write |
+| Service        | Default port | Purpose                                   |
+| -------------- | ------------ | ----------------------------------------- |
+| LunaTranslator | 2333         | WebSocket text hook + machine translation |
+| VOICEVOX       | 50021        | Japanese TTS synthesis                    |
+| AnkiConnect    | 8765         | Anki note read/write                      |
 
 ## Configuration (`config.toml`)
 
@@ -42,6 +42,7 @@ The settings UI (gear icon in navbar) calls `PATCH /api/config` on save, which r
 ## Settings Context (`lib/settings-context.tsx`)
 
 `SettingsProvider` is a required wrapper (mounted in `app/layout.tsx`) that exposes:
+
 - `settings` — current in-memory values (seeded from `initialSettings` prop)
 - `defaultSettings` — reset targets (from `[defaults.*]` in TOML)
 - `setSettings(s)` — updates state + writes to `config.toml` via API

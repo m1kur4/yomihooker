@@ -1,46 +1,54 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { BarChart2, Settings } from "lucide-react";
+import { useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { BarChart2, Settings } from 'lucide-react'
 import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-} from "@/components/ui/navigation-menu";
-import { AudioPlayer } from "@/components/audioplayer";
-import { Screenshot } from "@/components/screenshot";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useDeckStats } from "@/lib/deck-stats-context";
-import { useSettings, type AppSettings } from "@/lib/settings-context";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/navigation-menu'
+import { AudioPlayer } from '@/components/audioplayer'
+import { Screenshot } from '@/components/screenshot'
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useDeckStats } from '@/lib/deck-stats-context'
+import { useSettings, type AppSettings } from '@/lib/settings-context'
+import { cn } from '@/lib/utils'
 
-const APP_NAME = "Yomihooker";
-const NAV_ITEMS = [{ label: "Anki", href: "/anki" }];
+const APP_NAME = 'Yomihooker'
+const NAV_ITEMS = [{ label: 'Anki', href: '/anki' }]
 
 function SettingsPopover() {
-  const { settings, defaultSettings, setSettings } = useSettings();
-  const [draft, setDraft] = useState<AppSettings>(settings);
-  const [open, setOpen] = useState(false);
+  const { settings, defaultSettings, setSettings } = useSettings()
+  const [draft, setDraft] = useState<AppSettings>(settings)
+  const [open, setOpen] = useState(false)
 
   const handleOpen = (v: boolean) => {
-    if (v) setDraft(settings);
-    setOpen(v);
-  };
+    if (v) setDraft(settings)
+    setOpen(v)
+  }
 
   const handleSave = async () => {
-    await setSettings(draft);
-    setOpen(false);
-  };
+    await setSettings(draft)
+    setOpen(false)
+  }
 
   const handleReset = () => {
-    setDraft(defaultSettings);
-  };
+    setDraft(defaultSettings)
+  }
 
   return (
     <Popover open={open} onOpenChange={handleOpen}>
@@ -58,7 +66,10 @@ function SettingsPopover() {
               type="number"
               value={draft.lunatranslatorPort}
               onChange={(e) =>
-                setDraft((d) => ({ ...d, lunatranslatorPort: Number(e.target.value) }))
+                setDraft((d) => ({
+                  ...d,
+                  lunatranslatorPort: Number(e.target.value),
+                }))
               }
             />
           </div>
@@ -68,7 +79,10 @@ function SettingsPopover() {
               type="number"
               value={draft.voicevoxPort}
               onChange={(e) =>
-                setDraft((d) => ({ ...d, voicevoxPort: Number(e.target.value) }))
+                setDraft((d) => ({
+                  ...d,
+                  voicevoxPort: Number(e.target.value),
+                }))
               }
             />
           </div>
@@ -103,11 +117,11 @@ function SettingsPopover() {
         </div>
       </PopoverContent>
     </Popover>
-  );
+  )
 }
 
 function StatsButton() {
-  const { charCount } = useDeckStats();
+  const { charCount } = useDeckStats()
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
@@ -116,20 +130,20 @@ function StatsButton() {
         </Button>
       </HoverCardTrigger>
       <HoverCardContent className="w-52 text-sm">
-        You&apos;ve read{" "}
-        <span className="font-semibold">{charCount.toLocaleString()}</span>{" "}
+        You&apos;ve read{' '}
+        <span className="font-semibold">{charCount.toLocaleString()}</span>{' '}
         characters
       </HoverCardContent>
     </HoverCard>
-  );
+  )
 }
 
 export function Navbar() {
-  const pathname = usePathname();
+  const pathname = usePathname()
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-14 items-center px-4 gap-6">
+    <header className="bg-background/80 supports-[backdrop-filter]:bg-background/60 fixed top-0 right-0 left-0 z-50 border-b backdrop-blur">
+      <div className="flex h-14 items-center gap-6 px-4">
         <Link
           href="/"
           className="text-xl font-extrabold tracking-tight text-green-500"
@@ -144,9 +158,9 @@ export function Navbar() {
                   asChild
                   active={pathname === href}
                   className={cn(
-                    "inline-flex items-center px-3 py-1.5 text-xl font-semibold tracking-tight transition-colors rounded-md",
-                    "text-foreground/55 hover:text-foreground hover:bg-transparent",
-                    "data-active:text-foreground",
+                    'inline-flex items-center rounded-md px-3 py-1.5 text-xl font-semibold tracking-tight transition-colors',
+                    'text-foreground/55 hover:text-foreground hover:bg-transparent',
+                    'data-active:text-foreground',
                   )}
                 >
                   <Link href={href}>{label}</Link>
@@ -163,5 +177,5 @@ export function Navbar() {
         </div>
       </div>
     </header>
-  );
+  )
 }
