@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { ChevronDown, ChevronUp, Languages, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Languages, Loader2, Trash2 } from 'lucide-react'
 
 import { AudioPlayer } from '@/components/audioplayer'
 import { Clipboard } from '@/components/clipboard'
@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/collapsible'
 import type { MessageData } from '@/lib/message-data'
 import { useDeckStats } from '@/lib/deck-stats-context'
+
+type MessageState = MessageData & { translating?: boolean }
 import {
   useSettings,
   lunaWsUrl,
@@ -24,7 +26,7 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
   deckId,
   deckName,
 }) => {
-  const [messages, setMessages] = useState<MessageData[]>([])
+  const [messages, setMessages] = useState<MessageState[]>([])
   const { setCharCount } = useDeckStats()
   const { settings } = useSettings()
 
@@ -66,7 +68,45 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
           return
         }
 
-        setMessages(persistedMessages)
+        const blank = persistedMessages.filter((m) => m.translation === '')
+        setMessages(
+          persistedMessages.map((m) =>
+            m.translation === '' ? { ...m, translating: true } : m,
+          ),
+        )
+
+        for (const msg of blank) {
+          void (async () => {
+            let translation = ''
+            try {
+              const res = await fetch(
+                `${lunaTranslateUrl(settings.lunatranslatorPort)}?text=${encodeURIComponent(msg.original)}`,
+              )
+              if (!res.ok) throw new Error(`Translation request failed: ${res.status}`)
+              const { result } = (await res.json()) as { result?: string }
+              translation = result ?? ''
+            } catch (error) {
+              console.error('Translation fetch failed:', error)
+            }
+
+            try {
+              await fetch(`/api/decks/${deckId}/messages/${msg.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ translation }),
+              })
+            } catch (error) {
+              console.error('Translation persist failed:', error)
+            }
+
+            if (isCancelled) return
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === msg.id ? { ...m, translation, translating: false } : m,
+              ),
+            )
+          })()
+        }
       } catch (error) {
         console.error('Messages fetch failed:', error)
       }
@@ -77,58 +117,64 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
 
       wsOriginal = new WebSocket(lunaWsUrl(settings.lunatranslatorPort))
 
-      wsOriginal.onmessage = async (event: MessageEvent<string>) => {
+      wsOriginal.onmessage = (event: MessageEvent<string>) => {
         const originalText = event.data
+        const timestamp = new Date().toLocaleString('en-GB', {
+          timeZone: 'Asia/Shanghai',
+        })
 
-        let translation = ''
+        void (async () => {
+          // Persist immediately with empty translation so original text appears at once
+          let created: MessageState
+          try {
+            const response = await fetch(`/api/decks/${deckId}/messages`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ original: originalText, translation: '', timestamp }),
+            })
+            if (!response.ok) {
+              throw new Error(`Persist request failed: ${response.status}`)
+            }
+            created = { ...((await response.json()) as MessageData), translating: true }
+          } catch (error) {
+            console.error('Message persistence failed:', error)
+            return
+          }
 
-        try {
-          const response = await fetch(
-            `${lunaTranslateUrl(settings.lunatranslatorPort)}?text=${encodeURIComponent(originalText)}`,
+          if (isCancelled) return
+          setMessages((prev) => [...prev, created])
+
+          // Fetch translation asynchronously
+          let translation = ''
+          try {
+            const res = await fetch(
+              `${lunaTranslateUrl(settings.lunatranslatorPort)}?text=${encodeURIComponent(originalText)}`,
+            )
+            if (!res.ok) throw new Error(`Translation request failed: ${res.status}`)
+            const { result } = (await res.json()) as { result?: string }
+            translation = result ?? ''
+          } catch (error) {
+            console.error('Translation fetch failed:', error)
+          }
+
+          // Update DB with translation
+          try {
+            await fetch(`/api/decks/${deckId}/messages/${created.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ translation }),
+            })
+          } catch (error) {
+            console.error('Translation persist failed:', error)
+          }
+
+          if (isCancelled) return
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === created.id ? { ...m, translation, translating: false } : m,
+            ),
           )
-
-          if (!response.ok) {
-            throw new Error(`Translation request failed: ${response.status}`)
-          }
-
-          const { result } = (await response.json()) as { result?: string }
-          translation = result ?? ''
-        } catch (error) {
-          console.error('Translation fetch failed:', error)
-        }
-
-        const payload = {
-          original: originalText,
-          translation,
-          timestamp: new Date().toLocaleString('en-GB', {
-            timeZone: 'Asia/Shanghai',
-          }),
-        }
-
-        let created: MessageData
-        try {
-          const response = await fetch(`/api/decks/${deckId}/messages`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-          })
-
-          if (!response.ok) {
-            throw new Error(`Persist request failed: ${response.status}`)
-          }
-          created = (await response.json()) as MessageData
-        } catch (error) {
-          console.error('Message persistence failed:', error)
-          return
-        }
-
-        if (isCancelled) {
-          return
-        }
-
-        setMessages((prevMessages) => [...prevMessages, created])
+        })()
       }
 
       wsOriginal.onerror = (error) => console.error('Original WS Error:', error)
@@ -157,6 +203,7 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
           <MessageCard
             key={msg.id}
             data={msg}
+            translating={msg.translating ?? false}
             onDelete={() => deleteMessage(msg.id)}
           />
         ))}
@@ -167,6 +214,7 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
                 <MessageCard
                   key={msg.id}
                   data={msg}
+                  translating={msg.translating ?? false}
                   onDelete={() => deleteMessage(msg.id)}
                 />
               ))}
@@ -199,8 +247,9 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
 
 const MessageCard: React.FC<{
   data: MessageData
+  translating: boolean
   onDelete: () => void
-}> = ({ data, onDelete }) => {
+}> = ({ data, translating, onDelete }) => {
   const [showTranslation, setShowTranslation] = useState<boolean>(false)
 
   return (
@@ -275,8 +324,17 @@ const MessageCard: React.FC<{
             gap: '12px',
           }}
         >
-          <span>{data.translation}</span>
-          <Clipboard text={data.translation} label="Copy translation" />
+          {translating ? (
+            <span className="flex items-center gap-1.5 text-zinc-500">
+              <Loader2 className="size-4 animate-spin" />
+              Translating…
+            </span>
+          ) : (
+            <>
+              <span>{data.translation}</span>
+              <Clipboard text={data.translation} label="Copy translation" />
+            </>
+          )}
         </div>
       )}
     </div>

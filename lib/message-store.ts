@@ -38,6 +38,22 @@ export async function appendMessage(
   return toMessage(row)
 }
 
+export async function updateMessageTranslation(
+  deckId: number,
+  messageId: number,
+  translation: string,
+): Promise<MessageData | null> {
+  try {
+    const row = await prisma.message.update({
+      where: { id: messageId, deckId },
+      data: { translation },
+    })
+    return toMessage(row)
+  } catch {
+    return null
+  }
+}
+
 export async function deleteMessageById(
   deckId: number,
   messageId: number,
