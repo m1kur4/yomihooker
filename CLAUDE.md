@@ -70,7 +70,7 @@ app/
   page.tsx            — home; fetches decks, renders DeckGrid
   deck.tsx            — "use client"; WebSocket listener, message list (newest-first, top 10
                          visible, older in Collapsible), MessageCard
-  [deckId]/page.tsx   — per-deck server page; Breadcrumb + TextDeck
+  [deckId]/page.tsx   — per-deck server page; Breadcrumb + DeckCharCount (today/total) + TextDeck
   anki/page.tsx       — Anki page; renders NoteCard
   api/
     config/route.ts                       — PATCH: writes active settings to config.toml
@@ -85,11 +85,13 @@ app/
 
 components/
   navbar.tsx           — sticky top nav; app name (links home), Anki nav link,
-                         AudioPlayer, Screenshot, StatsButton (HoverCard), SettingsPopover
+                         AudioPlayer, Screenshot, StatsButton (Popover), SettingsPopover
   deck-grid.tsx        — home page deck grid; DeckCard, AddDeckButton, RenameDialog
   audioplayer.tsx      — TTS playback; compact mode (floats above button) or
                          non-compact/navbar mode (drops below, includes text input)
   mine-button.tsx      — screenshot + TTS + Anki dialog on click
+  deck-stats.tsx       — DeckCharCount client component; reads charCount + todayCharCount
+                         from DeckStatsContext; shown in [deckId] breadcrumb row
   note-card-form.tsx   — reusable form for Anki note fields; used by NoteCard and MineButton
   ui/button.tsx        — shadcn Button + custom sizes: icon-xs, icon-sm, icon-lg
 
@@ -98,8 +100,9 @@ lib/
                          lunaTranslateUrl()
   read-config.ts       — readConfigFile(), writeConfigFile(), configFileToSettings(),
                          configFileToDefaults(); server-only (uses fs + smol-toml)
-  deck-stats-context.tsx — DeckStatsProvider, useDeckStats(); tracks total char count
-                           for the active deck (shown in navbar StatsButton HoverCard)
+  deck-stats-context.tsx — DeckStatsProvider, useDeckStats(); tracks charCount (total) and
+                           todayCharCount (today) for the active deck; shown in the breadcrumb
+                           row (deck-stats.tsx) and navbar StatsButton Popover
   anki-connect.ts      — ankiRequest(action, params, {ankiPort?}),
                          storeMediaFileFromBlob(blob, filename, {ankiPort?})
   media-utils.ts       — fetchTtsBlob(text, {voicevoxPort?, speaker?}),
@@ -112,7 +115,7 @@ lib/
 ### Data flow
 
 1. `deck.tsx` on mount: fetches persisted messages from `/api/decks/{deckId}/messages`, then opens a WebSocket to `lunaWsUrl(settings.lunatranslatorPort)`. The effect re-runs if the port changes.
-2. On each WS message: fetches translation, POSTs `MessageData` to persist it, updates React state with the DB-assigned id. Also calls `setCharCount` to keep the navbar stats current.
+2. On each WS message: fetches translation, POSTs `MessageData` to persist it, updates React state with the DB-assigned id. Also calls `setCharCount` and `setTodayCharCount` to keep the breadcrumb and navbar stats current.
 3. TTS: `fetchTtsBlob(text, { voicevoxPort, speaker })` → `POST /api/tts` → VOICEVOX.
 4. Anki: `ankiRequest(action, params, { ankiPort })` → `POST /api/anki` (server proxy, avoids CORS).
 
