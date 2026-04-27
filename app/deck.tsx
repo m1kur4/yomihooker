@@ -27,13 +27,18 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
   deckName,
 }) => {
   const [messages, setMessages] = useState<MessageState[]>([])
-  const { setCharCount } = useDeckStats()
+  const { setCharCount, setTodayCharCount } = useDeckStats()
   const { settings } = useSettings()
 
   useEffect(() => {
     const total = messages.reduce((sum, m) => sum + m.original.length, 0)
     setCharCount(total)
-  }, [messages, setCharCount])
+    const todayPrefix = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Shanghai' })
+    const todayTotal = messages
+      .filter((m) => m.timestamp.startsWith(todayPrefix))
+      .reduce((sum, m) => sum + m.original.length, 0)
+    setTodayCharCount(todayTotal)
+  }, [messages, setCharCount, setTodayCharCount])
 
   const deleteMessage = async (messageId: number) => {
     const response = await fetch(`/api/decks/${deckId}/messages/${messageId}`, {

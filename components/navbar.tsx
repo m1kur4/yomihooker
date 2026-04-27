@@ -116,7 +116,7 @@ function SettingsPopover() {
 }
 
 function StatsButton() {
-  const { charCount } = useDeckStats()
+  const { charCount, todayCharCount } = useDeckStats()
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -125,9 +125,14 @@ function StatsButton() {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-52 text-sm" align="end">
-        You&apos;ve read{' '}
-        <span className="font-semibold">{charCount.toLocaleString()}</span>{' '}
-        characters
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Today</span>
+          <span className="font-semibold tabular-nums">{todayCharCount.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Total</span>
+          <span className="font-semibold tabular-nums">{charCount.toLocaleString()}</span>
+        </div>
       </PopoverContent>
     </Popover>
   )

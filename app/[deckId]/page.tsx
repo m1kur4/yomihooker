@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
 import TextDeck from '@/app/deck'
-import { DeckCharCount } from '@/components/deck-char-count'
+import { DeckCharCount } from '@/components/deck-stats'
 import {
   Breadcrumb,
   BreadcrumbItem,
