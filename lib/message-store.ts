@@ -71,6 +71,24 @@ export async function updateMessageTranslation(
   }
 }
 
+export async function readDeckStats(
+  deckId: number,
+): Promise<{ totalChars: number; todayChars: number }> {
+  const todayPrefix = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Shanghai' })
+  const [totalResult, todayResult] = await Promise.all([
+    prisma.$queryRaw<[{ total: bigint | null }]>`
+      SELECT SUM(LENGTH(original)) as total FROM Message WHERE deckId = ${deckId}
+    `,
+    prisma.$queryRaw<[{ total: bigint | null }]>`
+      SELECT SUM(LENGTH(original)) as total FROM Message WHERE deckId = ${deckId} AND timestamp LIKE ${todayPrefix + '%'}
+    `,
+  ])
+  return {
+    totalChars: Number(totalResult[0]?.total ?? 0),
+    todayChars: Number(todayResult[0]?.total ?? 0),
+  }
+}
+
 export async function deleteMessageById(
   deckId: number,
   messageId: number,

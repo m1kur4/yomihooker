@@ -58,16 +58,17 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
   const totalPages = Math.max(1, Math.ceil(totalMessages / PAGE_SIZE))
 
   useEffect(() => {
-    const total = messages.reduce((sum, m) => sum + m.original.length, 0)
-    setCharCount(total)
-    const todayPrefix = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Shanghai' })
-    const todayTotal = messages
-      .filter((m) => m.timestamp.startsWith(todayPrefix))
-      .reduce((sum, m) => sum + m.original.length, 0)
-    setTodayCharCount(todayTotal)
-  }, [messages, setCharCount, setTodayCharCount])
+    void fetch(`/api/decks/${deckId}/stats`)
+      .then((r) => r.json())
+      .then(({ totalChars, todayChars }: { totalChars: number; todayChars: number }) => {
+        setCharCount(totalChars)
+        setTodayCharCount(todayChars)
+      })
+      .catch(console.error)
+  }, [deckId, setCharCount, setTodayCharCount])
 
   const deleteMessage = async (messageId: number) => {
+    const msg = messages.find((m) => m.id === messageId)
     const response = await fetch(`/api/decks/${deckId}/messages/${messageId}`, {
       method: 'DELETE',
     })
@@ -79,6 +80,13 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
 
     setMessages((prev) => prev.filter((m) => m.id !== messageId))
     setTotalMessages((prev) => prev - 1)
+    if (msg) {
+      const todayPrefix = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Shanghai' })
+      setCharCount((prev) => prev - msg.original.length)
+      if (msg.timestamp.startsWith(todayPrefix)) {
+        setTodayCharCount((prev) => prev - msg.original.length)
+      }
+    }
   }
 
   useEffect(() => {
@@ -173,6 +181,11 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
 
           if (isCancelled) return
           setTotalMessages((prev) => prev + 1)
+          setCharCount((prev) => prev + originalText.length)
+          const todayPrefix = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Shanghai' })
+          if (created.timestamp.startsWith(todayPrefix)) {
+            setTodayCharCount((prev) => prev + originalText.length)
+          }
           if (page === 1) {
             setMessages((prev) => [created, ...prev])
           }
@@ -219,7 +232,7 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
       isCancelled = true
       wsOriginal?.close()
     }
-  }, [deckId, page, settings.lunatranslatorPort])
+  }, [deckId, page, settings.lunatranslatorPort, setCharCount, setTodayCharCount])
 
   const visible = messages.slice(0, 10)
   const hidden = messages.slice(10)
