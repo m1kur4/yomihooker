@@ -13,11 +13,6 @@ import {
 import { AudioPlayer } from '@/components/audioplayer'
 import { Screenshot } from '@/components/screenshot'
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@/components/ui/hover-card'
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -123,18 +118,18 @@ function SettingsPopover() {
 function StatsButton() {
   const { charCount } = useDeckStats()
   return (
-    <HoverCard>
-      <HoverCardTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <Button variant="ghost" size="icon-sm" aria-label="Reading stats">
           <BarChart2 />
         </Button>
-      </HoverCardTrigger>
-      <HoverCardContent className="w-52 text-sm">
+      </PopoverTrigger>
+      <PopoverContent className="w-52 text-sm" align="end">
         You&apos;ve read{' '}
         <span className="font-semibold">{charCount.toLocaleString()}</span>{' '}
         characters
-      </HoverCardContent>
-    </HoverCard>
+      </PopoverContent>
+    </Popover>
   )
 }
 
