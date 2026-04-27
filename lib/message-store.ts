@@ -23,6 +23,23 @@ export async function readMessages(deckId: number): Promise<MessageData[]> {
   return rows.map(toMessage)
 }
 
+export async function readMessagesPaginated(
+  deckId: number,
+  page: number,
+  pageSize: number,
+): Promise<{ messages: MessageData[]; total: number }> {
+  const [rows, total] = await Promise.all([
+    prisma.message.findMany({
+      where: { deckId },
+      orderBy: { id: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.message.count({ where: { deckId } }),
+  ])
+  return { messages: rows.map(toMessage), total }
+}
+
 export async function appendMessage(
   deckId: number,
   message: Omit<MessageData, 'id'>,

@@ -12,6 +12,15 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
 import type { MessageData } from '@/lib/message-data'
 import { useDeckStats } from '@/lib/deck-stats-context'
 
@@ -22,13 +31,31 @@ import {
   lunaTranslateUrl,
 } from '@/lib/settings-context'
 
+const PAGE_SIZE = 1000
+
+function getPaginationRange(page: number, totalPages: number): (number | 'ellipsis')[] {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1)
+  const range: (number | 'ellipsis')[] = [1]
+  if (page > 3) range.push('ellipsis')
+  for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
+    range.push(i)
+  }
+  if (page < totalPages - 2) range.push('ellipsis')
+  range.push(totalPages)
+  return range
+}
+
 const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
   deckId,
   deckName,
 }) => {
   const [messages, setMessages] = useState<MessageState[]>([])
+  const [page, setPage] = useState(1)
+  const [totalMessages, setTotalMessages] = useState(0)
   const { setCharCount, setTodayCharCount } = useDeckStats()
   const { settings } = useSettings()
+
+  const totalPages = Math.max(1, Math.ceil(totalMessages / PAGE_SIZE))
 
   useEffect(() => {
     const total = messages.reduce((sum, m) => sum + m.original.length, 0)
@@ -50,9 +77,8 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
       return
     }
 
-    setMessages((prevMessages) =>
-      prevMessages.filter((message) => message.id !== messageId),
-    )
+    setMessages((prev) => prev.filter((m) => m.id !== messageId))
+    setTotalMessages((prev) => prev - 1)
   }
 
   useEffect(() => {
@@ -61,23 +87,25 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
 
     const syncMessages = async () => {
       try {
-        const response = await fetch(`/api/decks/${deckId}/messages`)
+        const response = await fetch(
+          `/api/decks/${deckId}/messages?page=${page}&pageSize=${PAGE_SIZE}`,
+        )
 
         if (!response.ok) {
           throw new Error(`Messages request failed: ${response.status}`)
         }
 
-        const persistedMessages = (await response.json()) as MessageData[]
-
-        if (isCancelled) {
-          return
+        const { messages: fetched, total } = (await response.json()) as {
+          messages: MessageData[]
+          total: number
         }
 
-        const blank = persistedMessages.filter((m) => m.translation === '')
+        if (isCancelled) return
+
+        const blank = fetched.filter((m) => m.translation === '')
+        setTotalMessages(total)
         setMessages(
-          persistedMessages.map((m) =>
-            m.translation === '' ? { ...m, translating: true } : m,
-          ),
+          fetched.map((m) => (m.translation === '' ? { ...m, translating: true } : m)),
         )
 
         for (const msg of blank) {
@@ -116,9 +144,7 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
         console.error('Messages fetch failed:', error)
       }
 
-      if (isCancelled) {
-        return
-      }
+      if (isCancelled) return
 
       wsOriginal = new WebSocket(lunaWsUrl(settings.lunatranslatorPort))
 
@@ -129,7 +155,6 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
         })
 
         void (async () => {
-          // Persist immediately with empty translation so original text appears at once
           let created: MessageState
           try {
             const response = await fetch(`/api/decks/${deckId}/messages`, {
@@ -147,9 +172,11 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
           }
 
           if (isCancelled) return
-          setMessages((prev) => [...prev, created])
+          setTotalMessages((prev) => prev + 1)
+          if (page === 1) {
+            setMessages((prev) => [created, ...prev])
+          }
 
-          // Fetch translation asynchronously
           let translation = ''
           try {
             const res = await fetch(
@@ -162,7 +189,6 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
             console.error('Translation fetch failed:', error)
           }
 
-          // Update DB with translation
           try {
             await fetch(`/api/decks/${deckId}/messages/${created.id}`, {
               method: 'PATCH',
@@ -174,11 +200,13 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
           }
 
           if (isCancelled) return
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === created.id ? { ...m, translation, translating: false } : m,
-            ),
-          )
+          if (page === 1) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === created.id ? { ...m, translation, translating: false } : m,
+              ),
+            )
+          }
         })()
       }
 
@@ -191,12 +219,17 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
       isCancelled = true
       wsOriginal?.close()
     }
-  }, [deckId, settings.lunatranslatorPort])
+  }, [deckId, page, settings.lunatranslatorPort])
 
-  const reversed = [...messages].reverse()
-  const visible = reversed.slice(0, 10)
-  const hidden = reversed.slice(10)
+  const visible = messages.slice(0, 10)
+  const hidden = messages.slice(10)
   const [olderOpen, setOlderOpen] = useState(false)
+
+  const goToPage = (p: number) => {
+    if (p < 1 || p > totalPages || p === page) return
+    setPage(p)
+    setOlderOpen(false)
+  }
 
   return (
     <div style={styles.container}>
@@ -246,6 +279,44 @@ const TextDeck: React.FC<{ deckId: number; deckName: string }> = ({
           </>
         )}
       </Collapsible>
+
+      {totalPages > 1 && (
+        <Pagination className="mt-6">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => goToPage(page - 1)}
+                aria-disabled={page === 1}
+                className={page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+              />
+            </PaginationItem>
+            {getPaginationRange(page, totalPages).map((item, i) =>
+              item === 'ellipsis' ? (
+                <PaginationItem key={`ellipsis-${i}`}>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              ) : (
+                <PaginationItem key={item}>
+                  <PaginationLink
+                    isActive={item === page}
+                    onClick={() => goToPage(item)}
+                    className="cursor-pointer"
+                  >
+                    {item}
+                  </PaginationLink>
+                </PaginationItem>
+              ),
+            )}
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => goToPage(page + 1)}
+                aria-disabled={page === totalPages}
+                className={page === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   )
 }

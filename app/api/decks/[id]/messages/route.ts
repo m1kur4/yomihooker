@@ -1,10 +1,10 @@
 export const runtime = 'nodejs'
 
 import type { MessageData } from '@/lib/message-data'
-import { appendMessage, readMessages } from '@/lib/message-store'
+import { appendMessage, readMessagesPaginated } from '@/lib/message-store'
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: RouteContext<'/api/decks/[id]/messages'>,
 ) {
   const { id } = await context.params
@@ -13,8 +13,12 @@ export async function GET(
     return Response.json({ error: 'Invalid deck id' }, { status: 400 })
   }
 
-  const messages = await readMessages(deckId)
-  return Response.json(messages)
+  const url = new URL(request.url)
+  const page = Math.max(1, Number(url.searchParams.get('page') ?? '1'))
+  const pageSize = Math.max(1, Number(url.searchParams.get('pageSize') ?? '1000'))
+
+  const result = await readMessagesPaginated(deckId, page, pageSize)
+  return Response.json(result)
 }
 
 export async function POST(
