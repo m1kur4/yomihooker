@@ -434,7 +434,7 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     maxWidth: '600px',
     margin: '0 auto',
-    padding: '20px',
+    paddingTop: '20px',
     fontFamily: 'sans-serif',
   },
   card: {},
