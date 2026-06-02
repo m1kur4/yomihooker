@@ -32,6 +32,7 @@ Ports can be changed in the in-app settings (gear icon in the navbar) or directl
 ```bash
 npm install
 npx prisma generate --config ./prisma/config.ts
+npx prisma db push --config ./prisma/config.ts
 npm run dev
 ```
 
@@ -46,14 +47,58 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Database
 
-Yomihooker uses SQLite via Prisma. The database file lives at `data/data.db` (gitignored).
+Yomihooker uses SQLite via Prisma 7 and `@prisma/adapter-libsql`. The local database file lives at `data/data.db` and is gitignored, so every new checkout needs its own database file.
+
+### First-time setup
+
+Run these commands from the project root:
 
 ```bash
-# Apply migrations
-npx prisma migrate deploy --config ./prisma/config.ts
+npm install
+npx prisma generate --config ./prisma/config.ts
+npx prisma db push --config ./prisma/config.ts
+```
 
-# Seed from legacy JSON files (one-time migration)
+What these do:
+
+- `npm install` installs Prisma, the libsql adapter, and the generated-client dependencies.
+- `prisma generate` creates the local Prisma client used by the app.
+- `prisma db push` creates `data/data.db` and syncs it with `prisma/schema.prisma`.
+
+This project does not use Prisma migrations yet. After changing `prisma/schema.prisma`, run:
+
+```bash
+npx prisma db push --config ./prisma/config.ts
+```
+
+### Optional legacy import
+
+If you have old JSON deck data in `data/decks.json` and `data/decks/*/messages.json`, import it with:
+
+```bash
 npx prisma db seed --config ./prisma/config.ts
+```
+
+### Troubleshooting
+
+If the app shows an error like:
+
+```text
+ConnectionFailed("Unable to open connection to local database data/data.db: 14")
+```
+
+make sure the database exists:
+
+```bash
+mkdir data
+npx prisma db push --config ./prisma/config.ts
+```
+
+On Windows PowerShell, use this if `mkdir data` reports that the folder already exists:
+
+```powershell
+New-Item -ItemType Directory -Force data
+npx prisma db push --config ./prisma/config.ts
 ```
 
 ## Tech Stack

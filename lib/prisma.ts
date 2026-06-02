@@ -1,8 +1,16 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
+import { mkdirSync } from 'fs'
+import path from 'path'
+
+function defaultDatabaseUrl() {
+  const databasePath = path.join(process.cwd(), 'data', 'data.db')
+  mkdirSync(path.dirname(databasePath), { recursive: true })
+  return `file:${databasePath.replace(/\\/g, '/')}`
+}
 
 function createPrismaClient() {
-  const url = process.env.DATABASE_URL ?? 'file:data/data.db'
+  const url = process.env.DATABASE_URL ?? defaultDatabaseUrl()
   const adapter = new PrismaLibSql({ url })
   return new PrismaClient({ adapter })
 }
